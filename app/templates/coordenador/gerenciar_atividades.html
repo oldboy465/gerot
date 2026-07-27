@@ -1,213 +1,235 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
-    <div>
-        <h3 class="fw-bold mb-3">Engenharia de Rotinas</h3>
-        <h6 class="op-7 mb-2">Catálogo de serviços e definição de SLAs</h6>
-    </div>
-    <div class="ms-md-auto py-2 py-md-0">
-        <button class="btn btn-primary btn-round" data-bs-toggle="modal" data-bs-target="#modalNovaAtividade">
-            <i class="fas fa-plus-circle me-2"></i> Nova Atividade
-        </button>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-round">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="bg-light">
-                            <tr>
-                                <th style="width: 30%;">Atividade / Descrição</th>
-                                <th>Responsável</th>
-                                <th>Meta (SLA)</th>
-                                <th>Tipo</th>
-                                <th>Tarefas</th>
-                                <th class="text-end">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for atv in atividades %}
-                            <tr>
-                                <td>
-                                    <div class="fw-bold text-dark fs-6">{{ atv.titulo }}</div>
-                                    <small class="text-muted d-block text-truncate" style="max-width: 300px;">
-                                        {{ atv.descricao or 'Sem descrição definida.' }}
-                                    </small>
-                                </td>
-                                
-                                <td>
-                                    {% if atv.responsavel %}
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar avatar-xs me-2">
-                                                <span class="avatar-title rounded-circle bg-primary text-white">{{ atv.responsavel.username[0]|upper }}</span>
-                                            </div>
-                                            <small>{{ atv.responsavel.nome_completo.split(' ')[0] }}</small>
-                                        </div>
-                                    {% else %}
-                                        <span class="badge badge-outline-secondary">Equipe (Geral)</span>
-                                    {% endif %}
-                                </td>
-                                
-                                <td>
-                                    <span class="badge badge-info">
-                                        <i class="fas fa-hourglass-half me-1"></i> {{ atv.tempo_estimado_valor }} {{ atv.tempo_estimado_unidade }}
-                                    </span>
-                                </td>
-                                
-                                <td>
-                                    {% if atv.is_rotineira %}
-                                        <span class="badge badge-success">Rotina</span>
-                                    {% else %}
-                                        <span class="badge badge-warning">Projeto</span>
-                                    {% endif %}
-                                </td>
-                                
-                                <td>
-                                    <button class="btn btn-black btn-round btn-xs" 
-                                            onclick="abrirModalTarefa('{{ atv.id }}', '{{ atv.titulo }}')">
-                                        <i class="fas fa-list-ul me-1"></i> {{ atv.tarefas.count() }} Etapas
-                                    </button>
-                                </td>
-                                
-                                <td class="text-end">
-                                    <a href="{{ url_for('gestao.excluir_atividade', id=atv.id) }}" 
-                                       class="btn btn-icon btn-link btn-danger btn-xs"
-                                       onclick="return confirm('ATENÇÃO: Excluir esta atividade pode afetar o histórico. Continuar?')">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center py-5">
-                                    <div class="empty-state">
-                                        <i class="fas fa-clipboard-list fa-3x text-muted opacity-25 mb-3"></i>
-                                        <p class="text-muted">Nenhuma atividade cadastrada para este setor.</p>
+<div class="mx-auto max-w-7xl" x-data="{ modalRotina: false, modalTarefa: false, atvPaiId: null, atvPaiTitulo: '' }">
+
+    <!-- PAGE HEADER -->
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
+                Engenharia de Rotinas
+            </h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                Catálogo de serviços e definição de SLAs do setor
+            </p>
+        </div>
+
+        <div>
+            <button @click="modalRotina = true"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 shadow-sm">
+                <i class="fa-solid fa-plus"></i>
+                Nova Atividade
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="tailwind-card overflow-hidden mb-8">
+        <div class="border-b border-slate-100 px-6 py-4 dark:border-slate-800 flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 dark:text-white">
+                Catálogo de Atividades
+            </h4>
+            <span class="text-xs text-slate-500">
+                Total: {{ atividades|length }}
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                    <tr>
+                        <th scope="col" class="px-6 py-3.5">Atividade / Descrição</th>
+                        <th scope="col" class="px-6 py-3.5">Responsável</th>
+                        <th scope="col" class="px-6 py-3.5">Meta (SLA)</th>
+                        <th scope="col" class="px-6 py-3.5">Tipo</th>
+                        <th scope="col" class="px-6 py-3.5">Tarefas</th>
+                        <th scope="col" class="px-6 py-3.5 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for atv in atividades %}
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-slate-900 dark:text-white">{{ atv.titulo }}</span>
+                                <span class="text-xs text-slate-400 line-clamp-1">{{ atv.descricao or 'Sem descrição definida.' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if atv.responsavel %}
+                                <div class="flex items-center gap-2">
+                                    <div class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                                        {{ atv.responsavel.username[0]|upper }}
                                     </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                        {{ atv.responsavel.nome_completo.split(' ')[0] }}
+                                    </span>
+                                </div>
+                            {% else %}
+                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                    Equipe (Geral)
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">
+                            {{ atv.tempo_estimado_valor }} {{ atv.tempo_estimado_unidade }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if atv.is_rotineira %}
+                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                    Rotina
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                                    Projeto
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                                <i class="fa-solid fa-list-check text-slate-400"></i>
+                                {{ atv.tarefas.count() }} Etapas
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button @click="atvPaiId = {{ atv.id }}; atvPaiTitulo = '{{ atv.titulo }}'; modalTarefa = true" 
+                                        class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" 
+                                        title="Adicionar Sub-tarefa">
+                                    <i class="fa-solid fa-square-plus"></i>
+                                </button>
+                                <a href="{{ url_for('relatorios.ficha_tecnica', id=atv.id) }}" 
+                                   class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" 
+                                   title="Ver Ficha Técnica (POP)">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                            <i class="fa-solid fa-list-check text-3xl text-slate-300 mb-2"></i>
+                            <p class="text-sm font-medium">Nenhuma atividade cadastrada para este setor.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="modalNovaAtividade" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-drafting-compass me-2"></i> Cadastrar Rotina</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- MODAL 1: CADASTRAR ROTINA -->
+    <div x-show="modalRotina" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-tailwind p-4" x-cloak>
+        
+        <div class="tailwind-card w-full max-w-xl p-6 sm:p-8" @click.outside="modalRotina = false">
+            <div class="mb-6 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                <h5 class="text-lg font-bold text-slate-900 dark:text-white">Cadastrar Rotina</h5>
+                <button @click="modalRotina = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
-            <form action="{{ url_for('gestao.nova_atividade') }}" method="POST">
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold">Título da Atividade</label>
-                            <input type="text" class="form-control" name="titulo" placeholder="Ex: Conciliação Bancária" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Atribuir a</label>
-                            <select class="form-select" name="responsavel_id">
-                                <option value="">-- Toda a Equipe --</option>
-                                {% for u in usuarios %}
-                                    <option value="{{ u.id }}">{{ u.nome_completo }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
 
-                    <div class="mb-3 mt-3">
-                        <label class="form-label">Descrição (Instrução Rápida / POP)</label>
-                        <textarea class="form-control" name="descricao" rows="2" placeholder="Descreva brevemente o procedimento..."></textarea>
-                    </div>
+            <form method="POST" action="{{ url_for('gestao.nova_atividade') }}" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Título da Atividade</label>
+                    <input type="text" name="titulo" required class="form-input-tailwind" placeholder="Ex: Conciliação Bancária">
+                </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Tempo Estimado (SLA)</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" name="tempo_valor" min="1" required>
-                                <select class="form-select" name="tempo_unidade" style="max-width: 120px;">
-                                    <option value="minutos" selected>Minutos</option>
-                                    <option value="horas">Horas</option>
-                                    <option value="dias">Dias</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-center pt-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="is_rotineira" id="checkRotina" checked>
-                                <label class="form-check-label" for="checkRotina">
-                                    Marcar como rotina recorrente
-                                </label>
-                            </div>
-                        </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Atribuir a</label>
+                    <select name="responsavel_id" class="form-input-tailwind">
+                        <option value="">-- Toda a Equipe --</option>
+                        {% for u in usuarios %}
+                            <option value="{{ u.id }}">{{ u.nome_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Descrição (Instrução Rápida / POP)</label>
+                    <textarea name="descricao" rows="3" class="form-input-tailwind" placeholder="Passo a passo resumido para execução..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Tempo Estimado (SLA)</label>
+                        <input type="number" name="tempo_estimado_valor" required min="1" class="form-input-tailwind" placeholder="30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Unidade</label>
+                        <select name="tempo_estimado_unidade" class="form-input-tailwind">
+                            <option value="minutos">Minutos</option>
+                            <option value="horas">Horas</option>
+                            <option value="dias">Dias</option>
+                        </select>
                     </div>
                 </div>
-                
-                <div class="modal-footer border-0 pt-0 pb-4">
-                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-round fw-bold px-4">Salvar Atividade</button>
+
+                <div class="pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="is_rotineira" value="1" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Marcar como rotina recorrente</span>
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" @click="modalRotina = false" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">Cancelar</button>
+                    <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">Salvar Atividade</button>
                 </div>
             </form>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="modalNovaTarefa" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-indent me-2"></i> Adicionar Micro-Tarefa</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- MODAL 2: ADICIONAR MICRO-TAREFA -->
+    <div x-show="modalTarefa" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-tailwind p-4" x-cloak>
+        
+        <div class="tailwind-card w-full max-w-lg p-6 sm:p-8" @click.outside="modalTarefa = false">
+            <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                <h5 class="text-lg font-bold text-slate-900 dark:text-white">Adicionar Micro-Tarefa</h5>
+                <button @click="modalTarefa = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
-            <form action="{{ url_for('gestao.nova_tarefa') }}" method="POST">
-                <div class="modal-body p-4">
-                    <input type="hidden" name="atividade_id" id="task_atv_id">
-                    
-                    <div class="alert alert-secondary p-2 mb-3">
-                        <small class="text-uppercase text-muted fw-bold d-block">Vinculado à atividade:</small>
-                        <span class="fw-bold text-dark" id="task_atv_titulo">...</span>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Descrição da Tarefa</label>
-                        <input type="text" class="form-control" name="descricao" placeholder="Ex: Baixar arquivo XML" required>
-                    </div>
+            <p class="text-xs text-slate-500 mb-4">
+                Vinculado à atividade: <strong class="text-slate-800 dark:text-white" x-text="atvPaiTitulo"></strong>
+            </p>
 
-                    <div class="mb-3">
-                        <label class="form-label">Peso / Impacto (%)</label>
-                        <input type="number" class="form-control" name="impacto_percentual" min="0" max="100" value="0">
-                        <small class="text-muted">Use para calcular progresso parcial.</small>
-                    </div>
+            <form method="POST" action="{{ url_for('gestao.nova_tarefa') }}" class="space-y-4">
+                <input type="hidden" name="atividade_id" :value="atvPaiId">
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Descrição da Tarefa</label>
+                    <input type="text" name="descricao" required class="form-input-tailwind" placeholder="Ex: Conferência do extrato...">
                 </div>
-                
-                <div class="modal-footer border-0 pt-0 pb-4">
-                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <button type="submit" class="btn btn-dark btn-round px-4">Adicionar</button>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Peso / Impacto (%)</label>
+                    <input type="number" name="impacto_percentual" step="0.1" value="0.0" class="form-input-tailwind">
+                    <span class="mt-1 block text-[10px] text-slate-400">Use para calcular progresso parcial.</span>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" @click="modalTarefa = false" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">Fechar</button>
+                    <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">Adicionar</button>
                 </div>
             </form>
         </div>
     </div>
+
 </div>
+
 {% endblock %}
-
 {% block scripts %}
-<script>
-    function abrirModalTarefa(id, titulo) {
-        document.getElementById('task_atv_id').value = id;
-        document.getElementById('task_atv_titulo').innerText = titulo;
-        var modalTarefa = new bootstrap.Modal(document.getElementById('modalNovaTarefa'));
-        modalTarefa.show();
-    }
-</script>
 {% endblock %}

@@ -1,127 +1,179 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
-    <div>
-        <h3 class="fw-bold mb-3">Novo Setor</h3>
-        <h6 class="op-7 mb-2">Configuração da estrutura organizacional</h6>
+
+<div class="mx-auto max-w-4xl">
+    
+    <!-- HEADER -->
+    <div class="mb-6">
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
+            Novo Setor
+        </h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+            Configuração da estrutura organizacional
+        </p>
     </div>
-</div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <form method="POST" action="{{ url_for('admin.novo_setor') }}">
+    <!-- FORM CARD -->
+    <div class="tailwind-card p-6 md:p-8">
+        <form method="POST" action="" class="space-y-8">
             
-            <div class="card card-round mb-4">
-                <div class="card-header">
-                    <div class="card-title text-primary"><i class="fas fa-id-card me-2"></i> Identificação</div>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Nome do Setor *</label>
-                            <input type="text" class="form-control" name="nome" placeholder="Ex: Logística de Pátio" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Sigla *</label>
-                            <input type="text" class="form-control text-uppercase" name="sigla" placeholder="LOG" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Cód. Interno</label>
-                            <input type="text" class="form-control" name="codigo_interno" placeholder="10.01">
-                        </div>
+            <!-- SEÇÃO 1: IDENTIFICAÇÃO -->
+            <div>
+                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-building text-blue-600"></i>
+                    Identificação
+                </h4>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div class="md:col-span-2">
+                        <label for="nome" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Nome do Setor <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nome" name="nome" required
+                               class="form-input-tailwind"
+                               placeholder="Ex: Departamento Financeiro">
+                    </div>
+
+                    <div>
+                        <label for="sigla" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Sigla <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="sigla" name="sigla" required
+                               class="form-input-tailwind uppercase"
+                               placeholder="Ex: FIN">
+                    </div>
+
+                    <div>
+                        <label for="codigo_interno" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Cód. Interno
+                        </label>
+                        <input type="text" id="codigo_interno" name="codigo_interno"
+                               class="form-input-tailwind"
+                               placeholder="Ex: CC-102">
                     </div>
                 </div>
             </div>
 
-            <div class="card card-round mb-4">
-                <div class="card-header">
-                    <div class="card-title text-secondary"><i class="fas fa-sitemap me-2"></i> Hierarquia</div>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Setor Pai</label>
-                            <select class="form-select" name="hierarquia_pai_id">
-                                <option value="">-- Nível Raiz (Diretoria) --</option>
-                                {% for s in setores_pai %}
-                                    <option value="{{ s.id }}">{{ s.nome }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Tipo</label>
-                            <select class="form-select" name="tipo_setor">
-                                <option value="Operacional">Operacional</option>
-                                <option value="Administrativo">Administrativo</option>
-                                <option value="Estratégico">Estratégico</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Natureza</label>
-                            <select class="form-select" name="natureza_atuacao">
-                                <option value="Direta">Direta</option>
-                                <option value="Apoio">Apoio</option>
-                            </select>
-                        </div>
+            <!-- SEÇÃO 2: HIERARQUIA -->
+            <div>
+                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-sitemap text-blue-600"></i>
+                    Hierarquia
+                </h4>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div>
+                        <label for="hierarquia_pai_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Setor Pai
+                        </label>
+                        <select id="hierarquia_pai_id" name="hierarquia_pai_id" class="form-input-tailwind">
+                            <option value="">-- Nível Raiz (Diretoria) --</option>
+                            {% for s in setores_pai %}
+                                <option value="{{ s.id }}">{{ s.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    
-                    <div class="row g-3">
-                         <div class="col-md-6">
-                            <label class="form-label">Responsável</label>
-                            <select class="form-select" name="responsavel_id">
-                                <option value="">-- Selecione --</option>
-                                {% for u in usuarios %}
-                                    <option value="{{ u.id }}">{{ u.nome_completo }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+
+                    <div>
+                        <label for="tipo_setor" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Tipo
+                        </label>
+                        <select id="tipo_setor" name="tipo_setor" class="form-input-tailwind">
+                            <option value="Operacional">Operacional</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Estratégico">Estratégico</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="natureza_atuacao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Natureza
+                        </label>
+                        <select id="natureza_atuacao" name="natureza_atuacao" class="form-input-tailwind">
+                            <option value="Direta">Direta</option>
+                            <option value="Apoio">Apoio</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label for="responsavel_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Responsável
+                        </label>
+                        <select id="responsavel_id" name="responsavel_id" class="form-input-tailwind">
+                            <option value="">-- Selecione --</option>
+                            {% for u in usuarios %}
+                                <option value="{{ u.id }}">{{ u.nome_completo }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <div class="card card-round mb-4">
-                <div class="card-header">
-                    <div class="card-title text-info"><i class="fas fa-cogs me-2"></i> Operação</div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label">Missão</label>
-                        <textarea class="form-control" name="missao_setor" rows="2"></textarea>
+            <!-- SEÇÃO 3: OPERAÇÃO -->
+            <div>
+                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-blue-600"></i>
+                    Operação
+                </h4>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div class="md:col-span-3">
+                        <label for="missao_setor" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Missão
+                        </label>
+                        <textarea id="missao_setor" name="missao_setor" rows="3"
+                                  class="form-input-tailwind"
+                                  placeholder="Descrição da missão e objetivo do setor..."></textarea>
                     </div>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Capacidade Máx.</label>
-                            <input type="number" class="form-control" name="limite_max" min="0">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Turno</label>
-                            <select class="form-select" name="turno_operacao">
-                                <option value="Comercial">Comercial</option>
-                                <option value="Turnos">Turnos</option>
-                                <option value="24h">24h</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Escala</label>
-                            <select class="form-select" name="escala_trabalho">
-                                <option value="5x2">5x2</option>
-                                <option value="6x1">6x1</option>
-                                <option value="12x36">12x36</option>
-                            </select>
-                        </div>
+
+                    <div>
+                        <label for="limite_max_colaboradores" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Capacidade Máx.
+                        </label>
+                        <input type="number" id="limite_max_colaboradores" name="limite_max_colaboradores"
+                               class="form-input-tailwind" value="0" min="0">
                     </div>
-                </div>
-                <div class="card-action text-end">
-                    <a href="{{ url_for('admin.listar_setores') }}" class="btn btn-link link-secondary me-2">Cancelar</a>
-                    <button type="submit" class="btn btn-success btn-round fw-bold px-4">
-                        <i class="fas fa-check me-2"></i> Criar Setor
-                    </button>
+
+                    <div>
+                        <label for="turno_operacao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Turno
+                        </label>
+                        <select id="turno_operacao" name="turno_operacao" class="form-input-tailwind">
+                            <option value="Comercial">Comercial</option>
+                            <option value="Turnos">Turnos</option>
+                            <option value="24h">24h</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="escala_trabalho" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Escala
+                        </label>
+                        <select id="escala_trabalho" name="escala_trabalho" class="form-input-tailwind">
+                            <option value="5x2">5x2</option>
+                            <option value="6x1">6x1</option>
+                            <option value="12x36">12x36</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-            
+
+            <!-- BUTTONS -->
+            <div class="flex items-center justify-end gap-4 border-t border-slate-200 pt-6 dark:border-slate-700">
+                <a href="{{ url_for('admin.listar_setores') }}" 
+                   class="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition shadow">
+                    <i class="fa-solid fa-plus"></i>
+                    Criar Setor
+                </button>
+            </div>
+
         </form>
     </div>
+
 </div>
+
 {% endblock %}

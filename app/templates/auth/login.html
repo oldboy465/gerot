@@ -1,138 +1,158 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR" class="h-full bg-slate-900">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GEROT</title>
-    <!-- Utilizando o CSS que você já possui na Engine -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.min.css') }}">
-    
-    <style>
-        /* Correção para evitar os scrollers e barras cinzas */
-        body {
-            background-color: #f5f7fd; /* Fundo limpo */
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            overflow: hidden; /* Remove o scroll duplo */
-        }
-        
-        .login-card {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.05);
-            padding: 40px;
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
 
-        .login-logo {
-            font-size: 32px;
-            font-weight: 700;
-            color: #0d6efd;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .login-subtitle {
-            color: #6c757d;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-
-        .form-floating {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 12px;
-            font-weight: 600;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        .login-footer {
-            margin-top: 20px;
-            font-size: 13px;
-        }
-
-        /* Ajustes Mobile */
-        @media (max-width: 576px) {
-            .login-card {
-                padding: 30px 20px;
-                box-shadow: none;
-                background: transparent;
-            }
-            body {
-                background-color: #ffffff;
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
             }
         }
-    </style>
+    </script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-900 text-slate-100">
 
-    <div class="login-card">
-        <div class="login-logo">
-            <i class="fas fa-cube"></i> GEROT
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        
+        <!-- BRAND LOGO & TITLE -->
+        <div class="flex justify-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 font-bold text-white text-3xl shadow-xl shadow-blue-500/20">
+                G
+            </div>
         </div>
-        <div class="login-subtitle">Gestão Estratégica de Rotinas</div>
 
-        <h4 class="mb-4 fw-bold">Bem-vindo de volta</h4>
+        <h2 class="mt-4 text-center text-3xl font-extrabold tracking-tight text-white">
+            GEROT
+        </h2>
+        <p class="mt-1 text-center text-sm font-medium text-slate-400">
+            Gestão Estratégica de Rotinas
+        </p>
+    </div>
 
-        <!-- Mensagens de Erro/Sucesso do Flask -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-slate-800/80 backdrop-blur-md px-6 py-8 shadow-2xl rounded-2xl border border-slate-700/50 sm:px-10">
+            
+            <div class="mb-6 border-b border-slate-700/50 pb-4">
+                <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket text-blue-500"></i>
+                    Bem-vindo de volta
+                </h4>
+                <p class="text-xs text-slate-400 mt-1">
+                    Insira suas credenciais para acessar o painel.
+                </p>
+            </div>
+
+            <!-- FLASH MESSAGES -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="font-size: 14px; text-align: left;">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="mb-6 space-y-2">
+                    {% for category, message in messages %}
+                    <div class="flex items-center justify-between rounded-lg p-3.5 text-xs font-medium border
+                        {% if category == 'success' %} bg-emerald-950/50 text-emerald-300 border-emerald-800/50 
+                        {% elif category == 'danger' or category == 'error' %} bg-rose-950/50 text-rose-300 border-rose-800/50 
+                        {% elif category == 'warning' %} bg-amber-950/50 text-amber-300 border-amber-800/50 
+                        {% else %} bg-blue-950/50 text-blue-300 border-blue-800/50 {% endif %}">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-sm"></i>
+                            <span>{{ message }}</span>
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="POST" action="{{ url_for('auth.login') }}">
-            <!-- Input Username -->
-            <div class="form-floating">
-                <input type="text" class="form-control" id="username" name="username" placeholder="nome@empresa.com.br" required autocomplete="username">
-                <label for="username"><i class="fas fa-user me-2 text-muted"></i>Usuário ou E-mail</label>
-            </div>
-
-            <!-- Input Senha -->
-            <div class="form-floating">
-                <input type="password" class="form-control" id="password" name="password" placeholder="Senha" required autocomplete="current-password">
-                <label for="password"><i class="fas fa-lock me-2 text-muted"></i>Senha</label>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-4" style="font-size: 13px;">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember">
-                    <label class="form-check-label text-muted" for="remember">
-                        Lembrar-me
-                    </label>
+                    {% endfor %}
                 </div>
-                <a href="#" class="text-decoration-none">Esqueceu a senha?</a>
+            {% endif %}
+            {% endwith %}
+
+            <!-- LOGIN FORM -->
+            <form method="POST" action="" class="space-y-5">
+                
+                <div>
+                    <label for="username" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                        Usuário ou E-mail
+                    </label>
+                    <div class="relative rounded-lg shadow-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </div>
+                        <input type="text" id="username" name="username" required
+                               class="block w-full rounded-lg border border-slate-600 bg-slate-900/60 pl-10 pr-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                               placeholder="nome.sobrenome">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                        Senha
+                    </label>
+                    <div class="relative rounded-lg shadow-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required
+                               class="block w-full rounded-lg border border-slate-600 bg-slate-900/60 pl-10 pr-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                               placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="remember_me" name="remember_me" value="1"
+                               class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-800">
+                        <label for="remember_me" class="ml-2 block text-xs font-medium text-slate-300 cursor-pointer">
+                            Lembrar-me
+                        </label>
+                    </div>
+
+                    <div class="text-xs">
+                        <a href="#" class="font-medium text-blue-400 hover:text-blue-300 transition">
+                            Esqueceu a senha?
+                        </a>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" 
+                            class="flex w-full justify-center items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        ENTRAR NO SISTEMA
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- FOOTER LINK -->
+            <div class="mt-6 border-t border-slate-700/50 pt-4 text-center">
+                <p class="text-xs text-slate-400">
+                    Não possui conta? 
+                    <a href="{{ url_for('auth.registrar') }}" class="font-semibold text-blue-400 hover:text-blue-300 transition">
+                        Solicitar Acesso
+                    </a>
+                </p>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-login">ENTRAR NO SISTEMA</button>
-        </form>
+        </div>
 
-        <div class="login-footer text-muted">
-            Não possui conta? <a href="{{ url_for('auth.registrar') }}" class="text-decoration-none fw-bold">Solicitar Acesso</a>
+        <div class="mt-8 text-center text-xs text-slate-500">
+            <span>GEROT V6 • Sistema de Gestão Estratégica</span>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/core/jquery-3.7.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/core/bootstrap.min.js') }}"></script>
 </body>
 </html>

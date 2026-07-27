@@ -1,36 +1,50 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="d-flex flex-column align-items-center justify-content-center text-center py-5" style="min-height: 70vh;">
+
+<div class="flex min-h-[70vh] flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     
-    <div class="card card-round shadow-none bg-transparent mb-0">
-        <div class="card-body p-0">
-            <div class="mb-4">
-                <span class="btn-label-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                    <i class="fas fa-unlink fa-5x"></i>
-                </span>
-            </div>
-            
-            <h1 class="display-1 fw-bold text-danger mb-2">404</h1>
-            <h2 class="fw-bold mb-3">Página Não Encontrada</h2>
-            
-            <p class="text-muted fs-5 mb-5" style="max-width: 500px; margin: 0 auto;">
-                A URL que você tentou acessar não existe, foi movida ou você não tem permissão para visualizá-la.
-            </p>
-            
-            <div class="d-flex justify-content-center gap-3">
-                <button onclick="history.back()" class="btn btn-outline-secondary btn-round btn-lg">
-                    <i class="fas fa-arrow-left me-2"></i> Voltar
-                </button>
-                <a href="{{ url_for('index') }}" class="btn btn-primary btn-round btn-lg">
-                    <i class="fas fa-home me-2"></i> Ir para o Início
-                </a>
-            </div>
+    <div class="text-center">
+        <!-- ERROR CODE BADGE -->
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-blue-700 dark:bg-slate-800 dark:text-blue-400">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Erro 404
+        </span>
+
+        <!-- HUGE 404 TEXT -->
+        <h1 class="mt-4 text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-9xl">
+            404
+        </h1>
+
+        <!-- TITLE & SUBTITLE -->
+        <h2 class="mt-4 text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100 sm:text-3xl">
+            Página Não Encontrada
+        </h2>
+        
+        <p class="mx-auto mt-3 max-w-md text-sm text-slate-500 dark:text-slate-400">
+            A URL que você tentou acessar não existe, foi movida ou você não tem permissão para visualizá-la.
+        </p>
+
+        <!-- ACTION BUTTONS -->
+        <div class="mt-8 flex items-center justify-center gap-4">
+            <button onclick="window.history.back()" 
+                    class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                <i class="fa-solid fa-arrow-left"></i>
+                Voltar
+            </button>
+
+            <a href="{{ url_for('index') }}" 
+               class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow transition hover:bg-blue-700">
+                <i class="fa-solid fa-house"></i>
+                Ir para o Início
+            </a>
         </div>
+
+        <!-- SYSTEM FOOTER INFO -->
+        <p class="mt-12 text-xs text-slate-400 dark:text-slate-500">
+            GEROT V6 • Código do Erro: 404 Not Found
+        </p>
     </div>
-    
-    <div class="mt-5">
-        <small class="text-muted">GEROT V6 &bull; Código do Erro: 404 Not Found</small>
-    </div>
+
 </div>
+
 {% endblock %}

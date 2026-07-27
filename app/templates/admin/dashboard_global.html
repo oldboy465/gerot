@@ -1,166 +1,170 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
-    <div>
-        <h3 class="fw-bold mb-3">Visão Global</h3>
-        <h6 class="op-7 mb-2">Painel de Controle Administrativo (Super-Admin)</h6>
-    </div>
-    <div class="ms-md-auto py-2 py-md-0">
-        <a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-primary btn-round shadow-sm">
-            <i class="fas fa-users-cog me-2"></i> Gerenciar Acessos
-        </a>
-        <a href="{{ url_for('admin.listar_setores') }}" class="btn btn-secondary btn-round ms-2 shadow-sm">
-            <i class="fas fa-sitemap me-2"></i> Estrutura
-        </a>
-    </div>
-</div>
 
-<div class="row row-cols-1 row-cols-md-3 row-cols-xl-5 g-4 mb-4">
+<div class="mx-auto max-w-7xl">
     
-    <div class="col">
-        <div class="card card-stats card-round h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-icon">
-                        <div class="icon-big text-center icon-primary bubble-shadow-small">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                        <div class="numbers">
-                            <p class="card-category">Horas Produzidas</p>
-                            <h4 class="card-title">{{ kpis.horas }}h</h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- PAGE HEADER -->
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">
+                Visão Global
+            </h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                Painel de Controle Administrativo (Super-Admin)
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ url_for('admin.listar_usuarios') }}" 
+               class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 shadow-sm">
+                <i class="fa-solid fa-users-gear text-slate-400"></i>
+                Gerenciar Acessos
+            </a>
+            <a href="{{ url_for('admin.listar_setores') }}" 
+               class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 shadow-sm">
+                <i class="fa-solid fa-sitemap text-blue-200"></i>
+                Estrutura
+            </a>
         </div>
     </div>
 
-    <div class="col">
-        <div class="card card-stats card-round h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-icon">
-                        <div class="icon-big text-center icon-success bubble-shadow-small">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                        <div class="numbers">
-                            <p class="card-category">Eficiência Média</p>
-                            <h4 class="card-title">{{ kpis.eficiencia }}%</h4>
-                        </div>
-                    </div>
-                </div>
+    <!-- KPI METRICS GRID -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-8">
+        
+        <!-- CARD 1: HORAS PRODUZIDAS -->
+        <div class="tailwind-card kpi-border-primary p-5 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Horas Produzidas
+                </span>
+                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                    {{ kpis.horas }}h
+                </h4>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
+                <i class="fa-solid fa-business-time text-xl"></i>
             </div>
         </div>
+
+        <!-- CARD 2: EFICIÊNCIA MÉDIA -->
+        <div class="tailwind-card kpi-border-success p-5 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Eficiência Média
+                </span>
+                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                    {{ kpis.eficiencia }}%
+                </h4>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-slate-800 dark:text-emerald-400">
+                <i class="fa-solid fa-chart-line text-xl"></i>
+            </div>
+        </div>
+
+        <!-- CARD 3: BASE DE USUÁRIOS -->
+        <div class="tailwind-card kpi-border-info p-5 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Base de Usuários
+                </span>
+                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                    {{ kpis.usuarios }}
+                </h4>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:bg-slate-800 dark:text-sky-400">
+                <i class="fa-solid fa-users text-xl"></i>
+            </div>
+        </div>
+
+        <!-- CARD 4: SETORES ATIVOS -->
+        <div class="tailwind-card kpi-border-warning p-5 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Setores Ativos
+                </span>
+                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                    {{ kpis.setores }}
+                </h4>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-slate-800 dark:text-amber-400">
+                <i class="fa-solid fa-building text-xl"></i>
+            </div>
+        </div>
+
+        <!-- CARD 5: ROTINAS CADASTRADAS -->
+        <div class="tailwind-card kpi-border-danger p-5 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Rotinas Cadastradas
+                </span>
+                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+                    {{ kpis.rotinas }}
+                </h4>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-slate-800 dark:text-rose-400">
+                <i class="fa-solid fa-list-check text-xl"></i>
+            </div>
+        </div>
+
     </div>
 
-    <div class="col">
-        <div class="card card-stats card-round h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-icon">
-                        <div class="icon-big text-center icon-info bubble-shadow-small">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                        <div class="numbers">
-                            <p class="card-category">Base de Usuários</p>
-                            <h4 class="card-title">{{ kpis.usuarios }}</h4>
-                        </div>
-                    </div>
-                </div>
+    <!-- RANKING SECTION -->
+    <div class="tailwind-card p-6">
+        <div class="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+            <div>
+                <h4 class="text-lg font-bold text-slate-800 dark:text-white">
+                    Ranking de Produção (Top 5 Setores)
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Distribuição do tempo total trabalhado por setor
+                </p>
             </div>
+            <span class="rounded bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:bg-slate-800 dark:text-blue-400">
+                BI / Analytics
+            </span>
         </div>
-    </div>
 
-    <div class="col">
-        <div class="card card-stats card-round h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-icon">
-                        <div class="icon-big text-center icon-secondary bubble-shadow-small">
-                            <i class="fas fa-building"></i>
-                        </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                        <div class="numbers">
-                            <p class="card-category">Setores Ativos</p>
-                            <h4 class="card-title">{{ kpis.setores }}</h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        {% if ranking %}
+            <div class="space-y-5">
+                {% for item in ranking %}
+                    {% if kpis.horas > 0 %}
+                        {% set percent = (item.total_min / (kpis.horas * 60)) * 100 %}
+                    {% else %}
+                        {% set percent = 0 %}
+                    {% endif %}
+                    {% set width_value = percent|default(0)|round|string ~ '%' %}
 
-    <div class="col">
-        <div class="card card-stats card-round h-100 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-icon">
-                        <div class="icon-big text-center icon-warning bubble-shadow-small">
-                            <i class="fas fa-clipboard-list text-white"></i>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                    {{ loop.index }}
+                                </span>
+                                {{ item.sigla }}
+                            </span>
+                            <span class="font-medium text-slate-500 dark:text-slate-400">
+                                {{ item.total_min }} minutos
+                            </span>
+                        </div>
+                        <div class="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div class="h-full bg-blue-600 rounded-full transition-all duration-500" 
+                                 style="width: {{ width_value }}"></div>
                         </div>
                     </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                        <div class="numbers">
-                            <p class="card-category">Rotinas Cadastradas</p>
-                            <h4 class="card-title">{{ kpis.rotinas }}</h4>
-                        </div>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
-        </div>
+        {% else %}
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="mb-3 rounded-full bg-slate-100 p-4 text-slate-400 dark:bg-slate-800">
+                    <i class="fa-solid fa-inbox text-2xl"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Aguardando dados de produção...
+                </p>
+            </div>
+        {% endif %}
     </div>
 
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card card-round border-0 shadow-sm">
-            <div class="card-header bg-white pb-0 border-bottom-0">
-                <div class="card-head-row card-tools-still-right">
-                    <h4 class="card-title fw-bold text-dark"><i class="fas fa-trophy text-warning me-2"></i> Ranking de Produção (Top 5 Setores)</h4>
-                    <div class="card-tools">
-                        <button class="btn btn-icon btn-link btn-primary btn-xs" onclick="location.reload();"><i class="fa fa-sync-alt"></i></button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body pt-4">
-                {% if ranking %}
-                    {% for item in ranking %}
-                        {% if kpis.horas > 0 %}
-                            {% set percent = (item.total_min / (kpis.horas * 60)) * 100 %}
-                        {% else %}
-                            {% set percent = 0 %}
-                        {% endif %}
-                        {% set width_value = percent|default(0)|round|string ~ '%' %}
-                        
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-bold text-dark text-uppercase">{{ item.sigla }}</span>
-                                <span class="fw-bold text-primary">{{ item.total_min }} minutos</span>
-                            </div>
-                            <div class="progress rounded-pill bg-light" style="height: 10px;">
-                                <div class="progress-bar bg-primary rounded-pill progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ width_value }}"></div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="text-center py-5">
-                        <div class="icon-big text-muted opacity-25 mb-3">
-                            <i class="fas fa-chart-bar fa-3x"></i>
-                        </div>
-                        <p class="text-muted fw-bold">Aguardando dados de produção...</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

@@ -1,117 +1,118 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
-    <div>
-        <h3 class="fw-bold mb-3">Central de Auditoria</h3>
-        <h6 class="op-7 mb-2">Validação de apontamentos e correções de horário</h6>
-    </div>
-    <div class="ms-md-auto py-2 py-md-0">
-        <a href="{{ url_for('gestao.dashboard') }}" class="btn btn-label-secondary btn-round">
-            <i class="fas fa-arrow-left me-2"></i> Voltar ao Dashboard
-        </a>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-round">
-            <div class="card-header">
-                <div class="card-head-row">
-                    <div class="card-title">Correções Pendentes</div>
-                    <div class="card-tools">
-                        <ul class="nav nav-pills nav-secondary nav-pills-no-bd nav-sm" id="pills-tab" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" id="pills-pendente-tab" data-bs-toggle="pill" href="#pills-pendente" role="tab">Pendentes</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="pills-historico-tab" data-bs-toggle="pill" href="#pills-historico" role="tab">Histórico</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="tab-content mt-2 mb-3" id="pills-tabContent">
-                    
-                    <div class="tab-pane fade show active" id="pills-pendente" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped">
-                                <thead class="bg-warning text-white">
-                                    <tr>
-                                        <th>Solicitante</th>
-                                        <th>Atividade</th>
-                                        <th>Intervalo Registrado</th>
-                                        <th>Duração</th>
-                                        <th>Motivo / Obs</th>
-                                        <th class="text-end">Aprovação</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if correcoes %}
-                                        {% for item in correcoes %}
-                                        <tr>
-                                            <td>
-                                                <div class="fw-bold text-dark">{{ item.autor.nome_completo }}</div>
-                                                <small class="text-muted">{{ item.autor.cargo }}</small>
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-outline-dark">{{ item.atividade_referencia.titulo }}</span>
-                                            </td>
-                                            <td>
-                                                <div class="d-flex flex-column">
-                                                    <span class="text-success"><i class="fas fa-play me-2"></i>{{ item.data_hora_inicio.strftime('%d/%m %H:%M') }}</span>
-                                                    <span class="text-danger"><i class="fas fa-stop me-2"></i>{{ item.data_hora_fim.strftime('%d/%m %H:%M') }}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <h5 class="fw-bold mb-0">{{ item.duracao_minutos }} min</h5>
-                                            </td>
-                                            <td>
-                                                <div class="p-2 bg-light rounded border border-warning">
-                                                    <i class="fas fa-comment-dots text-warning me-1"></i> 
-                                                    <span class="fst-italic text-dark">{{ item.observacao }}</span>
-                                                </div>
-                                            </td>
-                                            <td class="text-end">
-                                                <form action="{{ url_for('gestao.validar_correcao', lancamento_id=item.id) }}" method="POST">
-                                                    <div class="btn-group">
-                                                        <button type="submit" name="acao" value="aprovar" class="btn btn-success btn-sm fw-bold">
-                                                            <i class="fas fa-check me-1"></i> Aprovar
-                                                        </button>
-                                                        <button type="submit" name="acao" value="rejeitar" class="btn btn-danger btn-sm fw-bold">
-                                                            <i class="fas fa-times me-1"></i> Rejeitar
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td colspan="6" class="text-center py-5">
-                                                <div class="empty-state">
-                                                    <div class="icon-big text-success mb-3"><i class="fas fa-check-circle fa-3x"></i></div>
-                                                    <h4 class="fw-bold text-muted">Nenhuma pendência encontrada.</h4>
-                                                    <p class="text-muted">A equipe está trabalhando dentro dos conformes.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+<div class="mx-auto max-w-7xl">
 
-                    <div class="tab-pane fade" id="pills-historico" role="tabpanel">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i> O histórico de auditoria completo estará disponível na próxima versão.
-                        </div>
-                    </div>
+    <!-- PAGE HEADER -->
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
+                Central de Auditoria
+            </h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                Validação de apontamentos e correções de horário
+            </p>
+        </div>
 
-                </div>
-            </div>
+        <div>
+            <a href="{{ url_for('gestao.dashboard') }}"
+               class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                <i class="fa-solid fa-arrow-left"></i>
+                Voltar ao Dashboard
+            </a>
         </div>
     </div>
+
+    <!-- MAIN AUDIT CARD -->
+    <div class="tailwind-card overflow-hidden">
+        
+        <div class="border-b border-slate-100 px-6 py-4 dark:border-slate-800 flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                Correções Pendentes
+            </h4>
+
+            <!-- TABS -->
+            <div class="flex rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+                <a href="#pills-pendente" class="rounded-md bg-white px-3 py-1 text-xs font-semibold text-slate-800 shadow dark:bg-slate-700 dark:text-white">
+                    Pendentes
+                </a>
+                <a href="#pills-historico" class="rounded-md px-3 py-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white">
+                    Histórico
+                </a>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                    <tr>
+                        <th scope="col" class="px-6 py-3.5">Solicitante</th>
+                        <th scope="col" class="px-6 py-3.5">Atividade</th>
+                        <th scope="col" class="px-6 py-3.5">Intervalo Registrado</th>
+                        <th scope="col" class="px-6 py-3.5">Duração</th>
+                        <th scope="col" class="px-6 py-3.5">Motivo / Obs</th>
+                        <th scope="col" class="px-6 py-3.5 text-center">Aprovação</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% if correcoes %}
+                        {% for item in correcoes %}
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-slate-900 dark:text-white">{{ item.autor.nome_completo }}</span>
+                                    <span class="text-xs text-slate-400">{{ item.autor.cargo }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">
+                                {{ item.atividade_referencia.titulo }}
+                            </td>
+                            <td class="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                                {{ item.data_hora_inicio.strftime('%d/%m %H:%M') }} - {{ item.data_hora_fim.strftime('%d/%m %H:%M') }}
+                            </td>
+                            <td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">
+                                {{ item.duracao_minutos }} min
+                            </td>
+                            <td class="px-6 py-4 text-xs text-slate-500 max-w-xs truncate">
+                                {{ item.observacao }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ url_for('gestao.aprovar_correcao', id=item.id) }}" 
+                                       class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">
+                                        <i class="fa-solid fa-check"></i> Aprovar
+                                    </a>
+                                    <a href="{{ url_for('gestao.rejeitar_correcao', id=item.id) }}" 
+                                       class="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 transition">
+                                        <i class="fa-solid fa-xmark"></i> Rejeitar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-circle-check text-3xl text-emerald-500 mb-2"></i>
+                                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">Nenhuma pendência encontrada.</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">A equipe está trabalhando dentro dos conformes.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="border-t border-slate-100 bg-slate-50/50 px-6 py-3 text-xs text-slate-400 dark:border-slate-800 dark:bg-slate-800/30">
+            O histórico de auditoria completo estará disponível na próxima versão.
+        </div>
+
+    </div>
+
 </div>
+
 {% endblock %}

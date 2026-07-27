@@ -1,109 +1,146 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="page-header">
-    <h3 class="fw-bold mb-3">Editar Usuário</h3>
-    <ul class="breadcrumbs mb-3">
-        <li class="nav-home"><a href="{{ url_for('admin.dashboard') }}"><i class="fas fa-home"></i></a></li>
-        <li class="separator"><i class="fas fa-chevron-right"></i></li>
-        <li class="nav-item"><a href="{{ url_for('admin.listar_usuarios') }}">Usuários</a></li>
-        <li class="separator"><i class="fas fa-chevron-right"></i></li>
-        <li class="nav-item">Editar</li>
-    </ul>
-</div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card card-round">
-            <div class="card-header">
-                <div class="d-flex align-items-center">
-                    <div class="avatar avatar-md me-3">
-                        <span class="avatar-title rounded-circle bg-primary text-white fs-4">
-                            {{ usuario.username[0]|upper }}
-                        </span>
-                    </div>
-                    <div>
-                        <h4 class="card-title mb-0">{{ usuario.nome_completo }}</h4>
-                        <p class="card-category text-muted mb-0">{{ usuario.email }}</p>
-                    </div>
-                </div>
-            </div>
+<div class="mx-auto max-w-4xl">
+    
+    <!-- HEADER & BREADCRUMB -->
+    <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
+                Editar Usuário
+            </h3>
+            <nav class="flex text-sm text-slate-500 dark:text-slate-400">
+                <a href="{{ url_for('admin.listar_usuarios') }}" class="hover:text-blue-600">Usuários</a>
+                <span class="mx-2">•</span>
+                <span class="text-slate-800 dark:text-slate-200">Editar</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- USER IDENTITY SUMMARY CARD -->
+    <div class="tailwind-card mb-6 p-6 flex items-center gap-5">
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-2xl font-bold text-white shadow">
+            {{ usuario.username[0]|upper }}
+        </div>
+        <div>
+            <h4 class="text-xl font-bold text-slate-900 dark:text-white">
+                {{ usuario.nome_completo }}
+            </h4>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                {{ usuario.email }}
+            </p>
+        </div>
+    </div>
+
+    <!-- EDIT FORM CARD -->
+    <div class="tailwind-card p-6 md:p-8">
+        <form method="POST" action="" class="space-y-8">
             
-            <div class="card-body p-4">
-                <form method="POST" action="{{ url_for('admin.editar_usuario', id=usuario.id) }}">
-                    
-                    <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">Informações Profissionais</h6>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Nome Completo</label>
-                            <input type="text" class="form-control" name="nome" value="{{ usuario.nome_completo }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Cargo / Função</label>
-                            <input type="text" class="form-control" name="cargo" value="{{ usuario.cargo or '' }}">
-                        </div>
+            <!-- SEÇÃO 1: INFORMAÇÕES PROFISSIONAIS -->
+            <div>
+                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-id-badge text-blue-600"></i>
+                    Informações Profissionais
+                </h4>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                        <label for="nome_completo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Nome Completo
+                        </label>
+                        <input type="text" id="nome_completo" name="nome_completo"
+                               value="{{ usuario.nome_completo }}"
+                               class="form-input-tailwind">
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">E-mail Corporativo</label>
-                        <input type="email" class="form-control" name="email" value="{{ usuario.email }}" required>
+                    <div>
+                        <label for="cargo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Cargo / Função
+                        </label>
+                        <input type="text" id="cargo" name="cargo"
+                               value="{{ usuario.cargo or '' }}"
+                               class="form-input-tailwind">
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Setor de Lotação</label>
-                        <select class="form-select" name="setor_id" required>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            E-mail Corporativo
+                        </label>
+                        <input type="email" id="email" name="email"
+                               value="{{ usuario.email }}"
+                               class="form-input-tailwind">
+                    </div>
+
+                    <div>
+                        <label for="setor_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Setor de Lotação
+                        </label>
+                        <select id="setor_id" name="setor_id" class="form-input-tailwind">
                             {% for setor in setores %}
                                 <option value="{{ setor.id }}" {% if usuario.setor_id == setor.id %}selected{% endif %}>
                                     {{ setor.nome }} ({{ setor.sigla }})
                                 </option>
                             {% endfor %}
                         </select>
-                        <small class="form-text text-muted">Define as atividades visíveis no painel.</small>
+                        <span class="mt-1 block text-xs text-slate-400">
+                            Define as atividades visíveis no painel.
+                        </span>
                     </div>
-
-                    <h6 class="text-uppercase text-danger fw-bold mb-3 border-bottom pb-2 mt-5">Permissões e Segurança</h6>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Perfil de Acesso</label>
-                            <select class="form-select bg-light" name="role">
-                                <option value="operador" {% if usuario.role == 'operador' %}selected{% endif %}>Operador</option>
-                                <option value="coordenador" {% if usuario.role == 'coordenador' %}selected{% endif %}>Coordenador</option>
-                                <option value="gestor" {% if usuario.role == 'gestor' %}selected{% endif %}>Gestor</option>
-                                <option value="admin" {% if usuario.role == 'admin' %}selected{% endif %}>Administrador</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-6 d-flex align-items-center pt-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="ativo" name="ativo" {% if usuario.ativo %}checked{% endif %}>
-                                <label class="form-check-label fw-bold ms-2" for="ativo">
-                                    Conta Ativa
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-secondary d-flex align-items-center mt-4" role="alert">
-                        <i class="fas fa-key fs-3 me-3 text-warning"></i>
-                        <div class="w-100">
-                            <label class="form-label mb-1 fw-bold">Redefinir Senha</label>
-                            <input type="password" class="form-control form-control-sm" name="nova_senha" 
-                                   placeholder="Deixe em branco para manter a senha atual">
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end mt-5 gap-2">
-                        <a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-link link-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-primary btn-round px-4 fw-bold">
-                            <i class="fas fa-save me-2"></i> Salvar Alterações
-                        </button>
-                    </div>
-
-                </form>
+                </div>
             </div>
-        </div>
+
+            <!-- SEÇÃO 2: PERMISSÕES E SEGURANÇA -->
+            <div>
+                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-blue-600"></i>
+                    Permissões e Segurança
+                </h4>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Perfil de Acesso
+                        </label>
+                        <select id="role" name="role" class="form-input-tailwind">
+                            <option value="operador" {% if usuario.role == 'operador' %}selected{% endif %}>Operador</option>
+                            <option value="coordenador" {% if usuario.role == 'coordenador' %}selected{% endif %}>Coordenador</option>
+                            <option value="gestor" {% if usuario.role == 'gestor' %}selected{% endif %}>Gestor</option>
+                            <option value="admin" {% if usuario.role == 'admin' %}selected{% endif %}>Administrador</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center pt-6">
+                        <label class="relative inline-flex items-center cursor-pointer gap-3">
+                            <input type="checkbox" name="ativo" value="1" {% if usuario.ativo %}checked{% endif %} class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600"></div>
+                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Conta Ativa</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 pt-6 dark:border-slate-700">
+                <button type="button" class="w-full sm:w-auto rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition">
+                    <i class="fa-solid fa-key mr-1"></i> Redefinir Senha
+                </button>
+
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <a href="{{ url_for('admin.listar_usuarios') }}" 
+                       class="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 transition">
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition shadow">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Salvar Alterações
+                    </button>
+                </div>
+            </div>
+
+        </form>
     </div>
+
 </div>
+
 {% endblock %}
