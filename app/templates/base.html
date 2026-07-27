@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>GEROT V6 - Gestão de Rotinas</title>
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    
+    <script src="{{ url_for('static', filename='js/plugin/webfont/webfont.min.js') }}"></script>
+    <script>
+      WebFont.load({
+        google: { families: ["Public Sans:300,400,500,600,700"] },
+        custom: {
+          families: [
+            "Font Awesome 5 Solid",
+            "Font Awesome 5 Regular",
+            "Font Awesome 5 Brands",
+            "simple-line-icons",
+          ],
+          urls: ["{{ url_for('static', filename='css/fonts.min.css') }}"],
+        },
+        active: function () {
+          sessionStorage.fonts = true;
+        },
+      });
+    </script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/plugins.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kaiadmin.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="{% if not current_user.is_authenticated %}bg-light{% endif %}">
+    
+    <div class="wrapper {% if not current_user.is_authenticated %}sidebar_minimize{% endif %}">
+        
+        {% if current_user.is_authenticated %}
+        <div class="sidebar" data-background-color="dark">
+            <div class="sidebar-logo">
+                <div class="logo-header" data-background-color="dark">
+                    <a href="{{ url_for('index') }}" class="logo text-white text-decoration-none">
+                        <h4 class="fw-bold mb-0"><i class="fas fa-cube me-2"></i> GEROT</h4>
+                    </a>
+                    <!-- Botoes de Toggle Responsivos (Mobile e Desktop) -->
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar">
+                            <i class="gg-menu-right"></i>
+                        </button>
+                        <button class="btn btn-toggle sidenav-toggler">
+                            <i class="gg-menu-left"></i>
+                        </button>
+                    </div>
+                    <button class="topbar-toggler more">
+                        <i class="gg-more-vertical-alt"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="sidebar-wrapper scrollbar scrollbar-inner">
+                <div class="sidebar-content">
+                    <ul class="nav nav-secondary">
+                        <li class="nav-item active">
+                            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i><p>Início</p></a>
+                        </li>
+                        <li class="nav-section">
+                            <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+                            <h4 class="text-section">Módulos</h4>
+                        </li>
+
+                        {% if current_user.is_operador or current_user.is_gestor %}
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#menuOperacao">
+                                <i class="fas fa-stopwatch"></i><p>Produção</p><span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="menuOperacao">
+                                <ul class="nav nav-collapse">
+                                    <li><a href="{{ url_for('operacao.painel') }}"><span class="sub-item">Painel</span></a></li>
+                                    <li><a href="{{ url_for('operacao.historico') }}"><span class="sub-item">Histórico</span></a></li>
+                                </ul>
+                            </div>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.is_gestor or current_user.is_coordenador or current_user.is_admin %}
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#menuGestao">
+                                <i class="fas fa-chart-line"></i><p>Gestão</p><span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="menuGestao">
+                                <ul class="nav nav-collapse">
+                                    <li><a href="{{ url_for('gestao.dashboard') }}"><span class="sub-item">Dashboard</span></a></li>
+                                    <li><a href="{{ url_for('gestao.listar_atividades') }}"><span class="sub-item">Engenharia</span></a></li>
+                                    <li><a href="{{ url_for('relatorios.gerador') }}"><span class="sub-item">Relatórios</span></a></li>
+                                </ul>
+                            </div>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.is_admin %}
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#menuAdmin">
+                                <i class="fas fa-cogs"></i><p>Admin</p><span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="menuAdmin">
+                                <ul class="nav nav-collapse">
+                                    <li><a href="{{ url_for('admin.dashboard') }}"><span class="sub-item">Global</span></a></li>
+                                    <li><a href="{{ url_for('admin.listar_usuarios') }}"><span class="sub-item">Usuários</span></a></li>
+                                    <li><a href="{{ url_for('admin.listar_setores') }}"><span class="sub-item">Setores</span></a></li>
+                                </ul>
+                            </div>
+                        </li>
+                        {% endif %}
+
+                        <li class="nav-item mt-4">
+                            <a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt text-danger"></i><p>Sair</p></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="main-panel {% if not current_user.is_authenticated %}w-100{% endif %}">
+            
+            {% if current_user.is_authenticated %}
+            <div class="main-header">
+                <div class="main-header-logo">
+                    <div class="logo-header" data-background-color="dark">
+                        <a href="{{ url_for('index') }}" class="logo text-white fw-bold">GEROT</a>
+                        <div class="nav-toggle">
+                            <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                        </div>
+                        <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                    </div>
+                </div>
+                
+                <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                            <li class="nav-item topbar-user dropdown hidden-caret">
+                                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#">
+                                    <div class="avatar-sm">
+                                        <span class="avatar-title rounded-circle border border-white bg-primary">
+                                            {{ current_user.username[0]|upper }}
+                                        </span>
+                                    </div>
+                                    <span class="profile-username">
+                                        <span class="fw-bold">{{ current_user.username }}</span>
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                                    <div class="dropdown-user-scroll scrollbar-outer">
+                                        <li>
+                                            <div class="user-box">
+                                                <div class="u-text">
+                                                    <h4>{{ current_user.nome_completo }}</h4>
+                                                    <p class="text-muted">{{ current_user.role|upper }}</p>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Encerrar Sessão
+                                            </a>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            {% endif %}
+            
+            <div class="{{ 'container' if current_user.is_authenticated else 'container-fluid d-flex justify-content-center align-items-center min-vh-100' }}">
+                <div class="{{ 'page-inner' if current_user.is_authenticated else 'w-100' }}">
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="row {{ 'justify-content-center' if not current_user.is_authenticated else '' }}">
+                                <div class="{{ 'col-md-12' if current_user.is_authenticated else 'col-md-5' }}">
+                                    {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <footer class="footer">
+                <div class="container-fluid d-flex justify-content-between">
+                    <nav class="pull-left">
+                        <ul class="nav">
+                            <li class="nav-item"><a class="nav-link" href="#">Suporte T.I</a></li>
+                        </ul>
+                    </nav>
+                    <div class="copyright">
+                        2026, GEROT V6 - by oldboy465
+                    </div>
+                </div>
+            </footer>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/core/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/core/popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/core/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plugin/jquery-scrollbar/jquery.scrollbar.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plugin/chart.js/chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plugin/jquery.sparkline/jquery.sparkline.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/plugin/datatables/datatables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/kaiadmin.min.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

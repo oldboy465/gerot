@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div>
+        <h3 class="fw-bold mb-3">Dashboard do Setor</h3>
+        <h6 class="op-7 mb-2">Visão Geral e Auditoria de Produção</h6>
+    </div>
+    <div class="ms-md-auto py-2 py-md-0">
+        <a href="{{ url_for('gestao.listar_atividades') }}" class="btn btn-primary btn-round">
+            <i class="fas fa-cogs me-2"></i> Configurar Rotinas
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-6 col-md-4">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-icon">
+                        <div class="icon-big text-center icon-primary bubble-shadow-small">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                        <div class="numbers">
+                            <p class="card-category">Produção Total</p>
+                            <h4 class="card-title">{{ stats.horas }}h</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-md-4">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-icon">
+                        <div class="icon-big text-center icon-success bubble-shadow-small">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                        <div class="numbers">
+                            <p class="card-category">Equipe Ativa</p>
+                            <h4 class="card-title">{{ stats.equipe }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-md-4">
+        <div class="card card-stats card-round">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-icon">
+                        <div class="icon-big text-center {% if correcoes|length > 0 %}icon-warning{% else %}icon-secondary{% endif %} bubble-shadow-small">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                        <div class="numbers">
+                            <p class="card-category">Auditoria Pendente</p>
+                            <h4 class="card-title">{{ correcoes|length }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-round">
+            <div class="card-header">
+                <div class="card-head-row">
+                    <div class="card-title">Solicitações de Correção</div>
+                    <div class="card-tools">
+                        <span class="badge badge-danger">{{ correcoes|length }} pendentes</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-head-bg-primary">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Atividade</th>
+                                <th>Horário Original</th>
+                                <th>Justificativa</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if correcoes %}
+                                {% for item in correcoes %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ item.autor.nome_completo }}</div>
+                                        <small class="text-muted">{{ item.autor.username }}</small>
+                                    </td>
+                                    <td>
+                                        {{ item.atividade_referencia.titulo }}
+                                        <br>
+                                        <span class="badge badge-count">{{ item.duracao_minutos }} min</span>
+                                    </td>
+                                    <td>
+                                        {{ item.data_hora_inicio.strftime('%d/%m %H:%M') }} <br> 
+                                        {{ item.data_hora_fim.strftime('%d/%m %H:%M') }}
+                                    </td>
+                                    <td>
+                                        <span class="text-danger fst-italic">"{{ item.observacao }}"</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <form action="{{ url_for('gestao.validar_correcao', lancamento_id=item.id) }}" method="POST" class="d-inline">
+                                            <button type="submit" name="acao" value="aprovar" class="btn btn-icon btn-success btn-round btn-xs" title="Aprovar">
+                                                <i class="fa fa-check"></i>
+                                            </button>
+                                            <button type="submit" name="acao" value="rejeitar" class="btn btn-icon btn-danger btn-round btn-xs" title="Rejeitar">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="fas fa-check-double fa-2x mb-2 text-success opacity-50"></i>
+                                        <p class="mb-0">Tudo limpo! Nenhuma pendência de auditoria.</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

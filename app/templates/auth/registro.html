@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex flex-column justify-content-center py-4">
+    <div class="row justify-content-center w-100 m-0">
+        <div class="col-12 col-lg-10 col-xl-9 px-2">
+            
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-dark">Cadastro de Colaborador</h2>
+                <p class="text-muted">Preencha a ficha completa para acesso ao GEROT.</p>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-file-contract fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold">Ficha Cadastral</h5>
+                            <small class="opacity-75">Todos os campos com (*) são obrigatórios.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.registrar') }}" class="needs-validation" novalidate>
+                        
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom">
+                            <i class="fas fa-id-card me-2"></i> Identificação Pessoal
+                        </h5>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Nome Completo *</label>
+                                <input type="text" class="form-control" name="nome" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Data de Nascimento *</label>
+                                <input type="date" class="form-control" name="data_nascimento" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Gênero</label>
+                                <select class="form-select" name="sexo">
+                                    <option value="" selected disabled>Selecione...</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Feminino">Feminino</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Estado Civil</label>
+                                <select class="form-select" name="estado_civil">
+                                    <option value="Solteiro(a)">Solteiro(a)</option>
+                                    <option value="Casado(a)">Casado(a)</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">CPF *</label>
+                                <input type="text" class="form-control" name="cpf" maxlength="14" oninput="mascaraCPF(this)" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">RG *</label>
+                                <input type="text" class="form-control" name="rg_numero" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Órgão Emissor</label>
+                                <input type="text" class="form-control" name="rg_orgao">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">UF</label>
+                                <select class="form-select" name="rg_uf">
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom mt-4">
+                            <i class="fas fa-map-marker-alt me-2"></i> Contato e Endereço
+                        </h5>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">E-mail Corporativo *</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Telefone/WhatsApp *</label>
+                                <input type="text" class="form-control" name="telefone" maxlength="15" oninput="mascaraTelefone(this)" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">CEP *</label>
+                                <input type="text" class="form-control" name="cep" id="cep" maxlength="9" onblur="consultarCEP(this.value)" required>
+                            </div>
+                            <div class="col-md-9 d-flex align-items-end">
+                                <span id="status_cep" class="text-muted small mb-2 ms-2">Digite o CEP para buscar.</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-10">
+                                <label class="form-label">Endereço *</label>
+                                <input type="text" class="form-control" name="logradouro" id="logradouro" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Número *</label>
+                                <input type="text" class="form-control" name="numero_endereco" id="numero_endereco" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-5">
+                                <label class="form-label">Bairro</label>
+                                <input type="text" class="form-control" name="bairro" id="bairro" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Cidade</label>
+                                <input type="text" class="form-control" name="cidade" id="cidade" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">UF</label>
+                                <input type="text" class="form-control" name="uf_endereco" id="uf_endereco" required>
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom mt-4">
+                            <i class="fas fa-briefcase me-2"></i> Dados Funcionais
+                        </h5>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Setor de Lotação *</label>
+                                <select class="form-select" name="setor_id" required>
+                                    <option value="" selected disabled>Selecione...</option>
+                                    {% for setor in setores %}
+                                        <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Matrícula</label>
+                                <input type="text" class="form-control" name="matricula">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Cargo *</label>
+                                <input type="text" class="form-control" name="cargo" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Função Real</label>
+                                <input type="text" class="form-control" name="funcao">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Vínculo</label>
+                                <select class="form-select" name="tipo_vinculo">
+                                    <option value="CLT">CLT</option>
+                                    <option value="Estágio">Estágio</option>
+                                    <option value="PJ">PJ</option>
+                                    <option value="Terceirizado">Terceirizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Admissão *</label>
+                                <input type="date" class="form-control" name="data_admissao" required>
+                            </div>
+                        </div>
+
+                        <h5 class="text-danger fw-bold mb-3 pb-2 border-bottom mt-4">
+                            <i class="fas fa-lock me-2"></i> Segurança
+                        </h5>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Senha *</label>
+                                <input type="password" class="form-control" name="senha" required minlength="6">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Confirmar Senha *</label>
+                                <input type="password" class="form-control" name="confirmacao_senha" required>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="termos" required>
+                            <label class="form-check-label small" for="termos">
+                                Confirmo a veracidade dos dados acima.
+                            </label>
+                        </div>
+
+                        <div class="d-flex flex-column flex-md-row justify-content-between pt-3 gap-2">
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg rounded-pill px-4">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold px-5">
+                                <i class="fas fa-check me-2"></i> Salvar Cadastro
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function mascaraCPF(i) {
+        var v = i.value;
+        if(isNaN(v[v.length-1])){ i.value = v.substring(0, v.length-1); return; }
+        i.setAttribute("maxlength", "14");
+        if (v.length == 3 || v.length == 7) i.value += ".";
+        if (v.length == 11) i.value += "-";
+    }
+    function mascaraTelefone(i) {
+        var v = i.value;
+        v = v.replace(/\D/g, "");
+        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+        v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+        i.value = v;
+    }
+    function consultarCEP(cep) {
+        var cepLimpo = cep.replace(/\D/g, '');
+        if (cepLimpo != "") {
+            var validacep = /^[0-9]{8}$/;
+            if(validacep.test(cepLimpo)) {
+                document.getElementById('logradouro').value="Buscando...";
+                document.getElementById('bairro').value="Buscando...";
+                document.getElementById('cidade').value="Buscando...";
+                document.getElementById('uf_endereco').value="...";
+                var script = document.createElement('script');
+                script.src = 'https://viacep.com.br/ws/'+ cepLimpo + '/json/?callback=meu_callback';
+                document.body.appendChild(script);
+            }
+        }
+    }
+    function meu_callback(conteudo) {
+        if (!("erro" in conteudo)) {
+            document.getElementById('logradouro').value=(conteudo.logradouro);
+            document.getElementById('bairro').value=(conteudo.bairro);
+            document.getElementById('cidade').value=(conteudo.localidade);
+            document.getElementById('uf_endereco').value=(conteudo.uf);
+            document.getElementById('status_cep').innerText = "Endereço encontrado!";
+            document.getElementById('status_cep').className = "text-success small mb-2 ms-2 fw-bold";
+        } else {
+            document.getElementById('status_cep').innerText = "CEP não encontrado.";
+            document.getElementById('status_cep').className = "text-danger small mb-2 ms-2 fw-bold";
+        }
+    }
+</script>
+{% endblock %}

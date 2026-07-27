@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h3 class="fw-bold text-dark mb-2"><i class="fas fa-calendar-alt text-primary me-2"></i> Minha Agenda & Atribuições</h3>
+        <a href="{{ url_for('operacao.painel') }}" class="btn btn-primary rounded-pill shadow-sm">
+            <i class="fas fa-plus me-2"></i> Novo Lançamento
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Coluna de Atividades Atribuídas Diretamente -->
+        <div class="col-12 col-xl-8">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold"><i class="fas fa-th-list text-secondary me-2"></i> Minhas Atividades Fixas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light text-muted small text-uppercase">
+                                <tr>
+                                    <th>Atividade</th>
+                                    <th>SLA (Tempo)</th>
+                                    <th>Complexidade</th>
+                                    <th class="text-end">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if atividades %}
+                                    {% for atv in atividades %}
+                                    <tr>
+                                        <td class="fw-bold text-dark">{{ atv.titulo }}</td>
+                                        <td><span class="badge bg-info text-dark">{{ atv.tempo_estimado_valor }} {{ atv.tempo_estimado_unidade }}</span></td>
+                                        <td>{{ atv.setor_dono.nivel_complexidade if atv.setor_dono else 'Média' }}</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="preencherLancamento('{{ atv.id }}')">
+                                                <i class="fas fa-play me-1"></i> Iniciar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endendfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">
+                                            Nenhuma atividade específica atribuída no momento.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna de Resumo Rápido -->
+        <div class="col-12 col-xl-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-gradient-primary text-white h-100">
+                <div class="card-body p-4 d-flex flex-column justify-content-center">
+                    <h5 class="fw-bold mb-4 opacity-75">Resumo da Semana</h5>
+                    
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="display-4 fw-bold me-3" id="horas-semana">--</div>
+                        <div>
+                            <div class="fw-bold">Horas Produzidas</div>
+                            <div class="small opacity-75">Últimos 7 dias</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <a href="{{ url_for('operacao.historico') }}" class="btn btn-light w-100 fw-bold rounded-pill text-primary">
+                            Ver Histórico Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function preencherLancamento(id) {
+        // Lógica futura para abrir modal ou redirecionar já com o ID preenchido
+        window.location.href = "{{ url_for('operacao.painel') }}?atv_id=" + id;
+    }
+
+    // Busca rápida de horas da semana na API
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{{ url_for('api.stats_usuario', cronologia='semanal') }}")
+            .then(response => response.json())
+            .then(data => {
+                let totalMinutos = data.dados.reduce((acc, curr) => acc + curr.minutos, 0);
+                document.getElementById('horas-semana').innerText = (totalMinutos / 60).toFixed(1) + 'h';
+            }).catch(err => console.error(err));
+    });
+</script>
+{% endblock %}

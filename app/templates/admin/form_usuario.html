@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h3 class="fw-bold mb-3">Editar Usuário</h3>
+    <ul class="breadcrumbs mb-3">
+        <li class="nav-home"><a href="{{ url_for('admin.dashboard') }}"><i class="fas fa-home"></i></a></li>
+        <li class="separator"><i class="fas fa-chevron-right"></i></li>
+        <li class="nav-item"><a href="{{ url_for('admin.listar_usuarios') }}">Usuários</a></li>
+        <li class="separator"><i class="fas fa-chevron-right"></i></li>
+        <li class="nav-item">Editar</li>
+    </ul>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-round">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <div class="avatar avatar-md me-3">
+                        <span class="avatar-title rounded-circle bg-primary text-white fs-4">
+                            {{ usuario.username[0]|upper }}
+                        </span>
+                    </div>
+                    <div>
+                        <h4 class="card-title mb-0">{{ usuario.nome_completo }}</h4>
+                        <p class="card-category text-muted mb-0">{{ usuario.email }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('admin.editar_usuario', id=usuario.id) }}">
+                    
+                    <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">Informações Profissionais</h6>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nome Completo</label>
+                            <input type="text" class="form-control" name="nome" value="{{ usuario.nome_completo }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Cargo / Função</label>
+                            <input type="text" class="form-control" name="cargo" value="{{ usuario.cargo or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">E-mail Corporativo</label>
+                        <input type="email" class="form-control" name="email" value="{{ usuario.email }}" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Setor de Lotação</label>
+                        <select class="form-select" name="setor_id" required>
+                            {% for setor in setores %}
+                                <option value="{{ setor.id }}" {% if usuario.setor_id == setor.id %}selected{% endif %}>
+                                    {{ setor.nome }} ({{ setor.sigla }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Define as atividades visíveis no painel.</small>
+                    </div>
+
+                    <h6 class="text-uppercase text-danger fw-bold mb-3 border-bottom pb-2 mt-5">Permissões e Segurança</h6>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Perfil de Acesso</label>
+                            <select class="form-select bg-light" name="role">
+                                <option value="operador" {% if usuario.role == 'operador' %}selected{% endif %}>Operador</option>
+                                <option value="coordenador" {% if usuario.role == 'coordenador' %}selected{% endif %}>Coordenador</option>
+                                <option value="gestor" {% if usuario.role == 'gestor' %}selected{% endif %}>Gestor</option>
+                                <option value="admin" {% if usuario.role == 'admin' %}selected{% endif %}>Administrador</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 d-flex align-items-center pt-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ativo" name="ativo" {% if usuario.ativo %}checked{% endif %}>
+                                <label class="form-check-label fw-bold ms-2" for="ativo">
+                                    Conta Ativa
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-secondary d-flex align-items-center mt-4" role="alert">
+                        <i class="fas fa-key fs-3 me-3 text-warning"></i>
+                        <div class="w-100">
+                            <label class="form-label mb-1 fw-bold">Redefinir Senha</label>
+                            <input type="password" class="form-control form-control-sm" name="nova_senha" 
+                                   placeholder="Deixe em branco para manter a senha atual">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-5 gap-2">
+                        <a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-link link-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary btn-round px-4 fw-bold">
+                            <i class="fas fa-save me-2"></i> Salvar Alterações
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

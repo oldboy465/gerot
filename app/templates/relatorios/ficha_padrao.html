@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4 d-print-none">
+    <div>
+        <h3 class="fw-bold mb-3">Ficha Técnica de Rotina</h3>
+        <h6 class="op-7 mb-2">Documentação Oficial do Procedimento (POP)</h6>
+    </div>
+    <div class="ms-md-auto py-2 py-md-0">
+        <button onclick="window.print()" class="btn btn-secondary btn-round">
+            <i class="fas fa-print me-2"></i> Imprimir Ficha
+        </button>
+        <button onclick="history.back()" class="btn btn-outline-primary btn-round ms-2">
+            Voltar
+        </button>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+        
+        <div class="card card-round border shadow-sm" id="print-area">
+            
+            <div class="card-header bg-white border-bottom-2 pb-0">
+                <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-lg me-3 d-print-none">
+                            <span class="avatar-title rounded bg-primary text-white">
+                                <i class="fas fa-clipboard-list fa-2x"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold text-uppercase mb-0 text-primary">GEROT V2</h2>
+                            <small class="text-muted fw-bold ls-1">SISTEMA DE GESTÃO DE ROTINAS</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <h4 class="fw-bold text-muted mb-0">POP #{{ atividade.id|string|zfill(4) }}</h4>
+                        <span class="badge badge-black text-uppercase">Revisão 1.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-5">
+                
+                <div class="text-center mb-5">
+                    <h6 class="text-uppercase text-muted fw-bold mb-2">Título do Procedimento</h6>
+                    <h1 class="fw-bold text-dark">{{ atividade.titulo }}</h1>
+                    <div class="d-flex justify-content-center gap-3 mt-3">
+                        <span class="badge badge-outline-primary fs-6 px-3 py-2">
+                            <i class="fas fa-users me-2"></i> Setor: {{ atividade.setor_dono.nome }}
+                        </span>
+                        <span class="badge badge-outline-success fs-6 px-3 py-2">
+                            <i class="fas fa-stopwatch me-2"></i> SLA: {{ atividade.tempo_estimado_valor }} {{ atividade.tempo_estimado_unidade }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <h4 class="fw-bold border-bottom pb-2 mb-3 text-primary">
+                            <i class="fas fa-align-left me-2"></i> Descrição & Instruções
+                        </h4>
+                        <div class="p-4 bg-light rounded border border-dashed">
+                            <p class="fs-5 mb-0" style="white-space: pre-line; line-height: 1.6;">
+                                {{ atividade.descricao or 'Nenhuma descrição detalhada fornecida para este procedimento.' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if atividade.tarefas.count() > 0 %}
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <h4 class="fw-bold border-bottom pb-2 mb-3 text-primary">
+                            <i class="fas fa-tasks me-2"></i> Etapas (Checklist)
+                        </h4>
+                        <ul class="list-group list-group-flush">
+                            {% for tarefa in atividade.tarefas %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="far fa-square fa-lg me-3 text-muted"></i>
+                                    <span class="fs-6">{{ tarefa.descricao }}</span>
+                                </div>
+                                {% if tarefa.impacto_percentual > 0 %}
+                                    <span class="badge badge-secondary">{{ tarefa.impacto_percentual|int }}% Impacto</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="row mt-auto pt-5">
+                    <div class="col-md-6">
+                        <div class="alert alert-secondary mb-0">
+                            <small class="fw-bold d-block text-uppercase">Responsabilidade</small>
+                            {% if atividade.responsavel %}
+                                <span class="fs-6"><i class="fas fa-user me-2"></i> {{ atividade.responsavel.nome_completo }}</span>
+                            {% else %}
+                                <span class="fs-6"><i class="fas fa-users me-2"></i> Equipe {{ atividade.setor_dono.sigla }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end d-flex flex-column justify-content-end">
+                        <small class="text-muted">Documento gerado eletronicamente em:</small>
+                        <p class="fw-bold">{{ now_date }}</p>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="card-footer text-center bg-light text-muted small d-print-none">
+                Para imprimir, utilize o botão acima ou pressione CTRL+P. O layout se ajustará automaticamente.
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #print-area, #print-area * {
+            visibility: visible;
+        }
+        #print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .d-print-none {
+            display: none !important;
+        }
+        .bg-light {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+        }
+        .badge {
+            border: 1px solid #000;
+            color: #000 !important;
+        }
+    }
+</style>
+{% endblock %}

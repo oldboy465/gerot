@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div>
+        <h3 class="fw-bold mb-3">Novo Setor</h3>
+        <h6 class="op-7 mb-2">Configuração da estrutura organizacional</h6>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <form method="POST" action="{{ url_for('admin.novo_setor') }}">
+            
+            <div class="card card-round mb-4">
+                <div class="card-header">
+                    <div class="card-title text-primary"><i class="fas fa-id-card me-2"></i> Identificação</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nome do Setor *</label>
+                            <input type="text" class="form-control" name="nome" placeholder="Ex: Logística de Pátio" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Sigla *</label>
+                            <input type="text" class="form-control text-uppercase" name="sigla" placeholder="LOG" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Cód. Interno</label>
+                            <input type="text" class="form-control" name="codigo_interno" placeholder="10.01">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-round mb-4">
+                <div class="card-header">
+                    <div class="card-title text-secondary"><i class="fas fa-sitemap me-2"></i> Hierarquia</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Setor Pai</label>
+                            <select class="form-select" name="hierarquia_pai_id">
+                                <option value="">-- Nível Raiz (Diretoria) --</option>
+                                {% for s in setores_pai %}
+                                    <option value="{{ s.id }}">{{ s.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" name="tipo_setor">
+                                <option value="Operacional">Operacional</option>
+                                <option value="Administrativo">Administrativo</option>
+                                <option value="Estratégico">Estratégico</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Natureza</label>
+                            <select class="form-select" name="natureza_atuacao">
+                                <option value="Direta">Direta</option>
+                                <option value="Apoio">Apoio</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                         <div class="col-md-6">
+                            <label class="form-label">Responsável</label>
+                            <select class="form-select" name="responsavel_id">
+                                <option value="">-- Selecione --</option>
+                                {% for u in usuarios %}
+                                    <option value="{{ u.id }}">{{ u.nome_completo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-round mb-4">
+                <div class="card-header">
+                    <div class="card-title text-info"><i class="fas fa-cogs me-2"></i> Operação</div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Missão</label>
+                        <textarea class="form-control" name="missao_setor" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Capacidade Máx.</label>
+                            <input type="number" class="form-control" name="limite_max" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Turno</label>
+                            <select class="form-select" name="turno_operacao">
+                                <option value="Comercial">Comercial</option>
+                                <option value="Turnos">Turnos</option>
+                                <option value="24h">24h</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Escala</label>
+                            <select class="form-select" name="escala_trabalho">
+                                <option value="5x2">5x2</option>
+                                <option value="6x1">6x1</option>
+                                <option value="12x36">12x36</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-action text-end">
+                    <a href="{{ url_for('admin.listar_setores') }}" class="btn btn-link link-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-success btn-round fw-bold px-4">
+                        <i class="fas fa-check me-2"></i> Criar Setor
+                    </button>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+</div>
+{% endblock %}

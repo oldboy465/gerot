@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center text-center py-5" style="min-height: 70vh;">
+    
+    <div class="card card-round shadow-none bg-transparent mb-0">
+        <div class="card-body p-0">
+            <div class="mb-4">
+                <span class="btn-label-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                    <i class="fas fa-unlink fa-5x"></i>
+                </span>
+            </div>
+            
+            <h1 class="display-1 fw-bold text-danger mb-2">404</h1>
+            <h2 class="fw-bold mb-3">Página Não Encontrada</h2>
+            
+            <p class="text-muted fs-5 mb-5" style="max-width: 500px; margin: 0 auto;">
+                A URL que você tentou acessar não existe, foi movida ou você não tem permissão para visualizá-la.
+            </p>
+            
+            <div class="d-flex justify-content-center gap-3">
+                <button onclick="history.back()" class="btn btn-outline-secondary btn-round btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i> Voltar
+                </button>
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-round btn-lg">
+                    <i class="fas fa-home me-2"></i> Ir para o Início
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-5">
+        <small class="text-muted">GEROT V6 &bull; Código do Erro: 404 Not Found</small>
+    </div>
+</div>
+{% endblock %}

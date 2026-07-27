@@ -1,0 +1,103 @@
+/* ==========================================================================
+   TRANSUL GEROT v1 - MAIN STYLESHEET
+   ========================================================================== */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --background-light: #f8f9fa;
+}
+
+body {
+    background-color: var(--background-light);
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* --- COMPONENTES DE CARTÃO (CARDS) --- */
+.card {
+    border: none;
+    border-radius: 0.75rem; /* 12px */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    /* Efeito sutil de levantar ao passar o mouse (apenas desktop) */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-weight: 600;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+/* --- DASHBOARD KPIS --- */
+.kpi-card {
+    border-left: 5px solid var(--primary-color);
+}
+.kpi-card.success { border-left-color: var(--success-color); }
+.kpi-card.warning { border-left-color: var(--warning-color); }
+.kpi-card.danger { border-left-color: var(--danger-color); }
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+}
+.kpi-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: #777;
+}
+
+/* --- MOBILE OPTIMIZATIONS (OPERADOR) --- */
+@media (max-width: 768px) {
+    .btn-lg-mobile {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.5rem;
+    }
+    
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    h1, h2 {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+/* --- UTILITÁRIOS --- */
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #0d6efd, #0a58ca);
+}
+
+.auth-box {
+    max-width: 400px;
+    margin: 5rem auto;
+}
+
+/* --- LISTAS DE ATIVIDADES --- */
+.atividade-item {
+    cursor: pointer;
+    border-left: 4px solid transparent;
+}
+.atividade-item:hover {
+    background-color: #f1f3f5;
+    border-left-color: var(--primary-color);
+}

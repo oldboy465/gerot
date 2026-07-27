@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center text-center py-5" style="min-height: 70vh;">
+    
+    <div class="card card-round shadow-none bg-transparent mb-0">
+        <div class="card-body p-0">
+            <div class="mb-4">
+                <span class="btn-label-warning rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                    <i class="fas fa-server fa-5x"></i>
+                </span>
+            </div>
+            
+            <h1 class="display-1 fw-bold text-dark mb-2">500</h1>
+            <h2 class="fw-bold mb-3">Erro Interno do Servidor</h2>
+            
+            <p class="text-muted fs-5 mb-5" style="max-width: 600px; margin: 0 auto;">
+                Ocorreu uma falha inesperada no processamento da sua solicitação. <br>
+                Nossa equipe técnica foi notificada automaticamente.
+            </p>
+            
+            <div class="card card-round border-danger border-start border-4 text-start d-inline-block mb-4 bg-white" style="max-width: 500px;">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold text-danger mb-1"><i class="fas fa-exclamation-triangle me-2"></i> O que fazer?</h6>
+                    <p class="small text-muted mb-0">Tente recarregar a página em alguns instantes. Se o erro persistir, faça logout e login novamente.</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-round btn-lg">
+                    <i class="fas fa-sync-alt me-2"></i> Tentar Novamente
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger btn-round btn-lg">
+                    <i class="fas fa-sign-out-alt me-2"></i> Relogar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

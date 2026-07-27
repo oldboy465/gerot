@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div>
+        <h3 class="fw-bold mb-3">Gestão de Usuários</h3>
+        <h6 class="op-7 mb-2">Controle de acesso e cadastro de colaboradores</h6>
+    </div>
+    <div class="ms-md-auto py-2 py-md-0">
+        <a href="{{ url_for('auth.registrar') }}" class="btn btn-primary btn-round">
+            <i class="fas fa-user-plus me-2"></i> Novo Usuário
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-round">
+            <div class="card-header">
+                <div class="card-head-row card-tools-still-right">
+                    <h4 class="card-title">Base de Colaboradores</h4>
+                    <div class="card-tools">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" placeholder="Buscar...">
+                            <button class="btn btn-icon btn-primary btn-round btn-xs">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-head-bg-primary">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Cargo / Função</th>
+                                <th>Setor</th>
+                                <th>Perfil (Role)</th>
+                                <th>Status</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm me-2">
+                                            <span class="avatar-title rounded-circle border border-white bg-secondary">
+                                                {{ usuario.username[0]|upper }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ usuario.nome_completo }}</div>
+                                            <small class="text-muted">{{ usuario.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <td>{{ usuario.cargo or '-' }}</td>
+                                
+                                <td>
+                                    <span class="badge badge-count badge-info">
+                                        {{ usuario.setor_pertencente.sigla }}
+                                    </span>
+                                </td>
+                                
+                                <td>
+                                    {% if usuario.role == 'admin' %}
+                                        <span class="badge badge-black"><i class="fas fa-crown me-1"></i> Admin</span>
+                                    {% elif usuario.role == 'coordenador' %}
+                                        <span class="badge badge-primary">Gestor</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Operador</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td>
+                                    {% if usuario.ativo %}
+                                        <span class="badge badge-success">Ativo</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Bloqueado</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td class="text-end">
+                                    <div class="form-button-action">
+                                        <a href="{{ url_for('admin.editar_usuario', id=usuario.id) }}" 
+                                           class="btn btn-link btn-primary btn-lg" 
+                                           data-bs-toggle="tooltip" title="Editar Perfil">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('admin.excluir_usuario', id=usuario.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
+                                            <button type="button" class="btn btn-link btn-danger" data-bs-toggle="tooltip" title="Remover">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

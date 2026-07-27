@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - GEROT</title>
+    <!-- Utilizando o CSS que você já possui na Engine -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.min.css') }}">
+    
+    <style>
+        /* Correção para evitar os scrollers e barras cinzas */
+        body {
+            background-color: #f5f7fd; /* Fundo limpo */
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden; /* Remove o scroll duplo */
+        }
+        
+        .login-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0d6efd;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-subtitle {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .form-floating {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            font-weight: 600;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .login-footer {
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        /* Ajustes Mobile */
+        @media (max-width: 576px) {
+            .login-card {
+                padding: 30px 20px;
+                box-shadow: none;
+                background: transparent;
+            }
+            body {
+                background-color: #ffffff;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="fas fa-cube"></i> GEROT
+        </div>
+        <div class="login-subtitle">Gestão Estratégica de Rotinas</div>
+
+        <h4 class="mb-4 fw-bold">Bem-vindo de volta</h4>
+
+        <!-- Mensagens de Erro/Sucesso do Flask -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="font-size: 14px; text-align: left;">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <!-- Input Username -->
+            <div class="form-floating">
+                <input type="text" class="form-control" id="username" name="username" placeholder="nome@empresa.com.br" required autocomplete="username">
+                <label for="username"><i class="fas fa-user me-2 text-muted"></i>Usuário ou E-mail</label>
+            </div>
+
+            <!-- Input Senha -->
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Senha" required autocomplete="current-password">
+                <label for="password"><i class="fas fa-lock me-2 text-muted"></i>Senha</label>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4" style="font-size: 13px;">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember">
+                    <label class="form-check-label text-muted" for="remember">
+                        Lembrar-me
+                    </label>
+                </div>
+                <a href="#" class="text-decoration-none">Esqueceu a senha?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-login">ENTRAR NO SISTEMA</button>
+        </form>
+
+        <div class="login-footer text-muted">
+            Não possui conta? <a href="{{ url_for('auth.registrar') }}" class="text-decoration-none fw-bold">Solicitar Acesso</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/core/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/core/bootstrap.min.js') }}"></script>
+</body>
+</html>

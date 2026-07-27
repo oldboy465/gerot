@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div>
+        <h3 class="fw-bold mb-3">Meu Histórico</h3>
+        <h6 class="op-7 mb-2">Registro completo de atividades realizadas</h6>
+    </div>
+    <div class="ms-md-auto py-2 py-md-0">
+        <!-- Alterado: Agora abre o Modal de Lançamento Avulso direto na tela -->
+        <button class="btn btn-primary btn-round shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLancamentoAvancado" onclick="prepararModalAvancado()">
+            <i class="fas fa-plus me-2"></i> Novo Lançamento
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-round shadow-sm border-0">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-head-bg-primary">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Atividade</th>
+                                <th class="text-center">Duração</th>
+                                <th class="text-center">Eficiência</th>
+                                <th class="text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pagination.items %}
+                            <tr>
+                                <td class="text-nowrap">
+                                    <div class="fw-bold text-dark">{{ item.data_hora_inicio.strftime('%d/%m/%Y') }}</div>
+                                    <small class="text-muted">
+                                        {{ item.data_hora_inicio.strftime('%H:%M') }} - {{ item.data_hora_fim.strftime('%H:%M') }}
+                                    </small>
+                                </td>
+                                
+                                <td>
+                                    <span class="fw-bold">{{ item.atividade_referencia.titulo }}</span>
+                                    {% if item.observacao %}
+                                        <br>
+                                        <small class="text-muted fst-italic"><i class="fas fa-comment-alt me-1"></i>{{ item.observacao }}</small>
+                                    {% endif %}
+                                </td>
+                                
+                                <td class="text-center">
+                                    <span class="badge badge-count badge-info">
+                                        {{ item.duracao_minutos }} min
+                                    </span>
+                                </td>
+                                
+                                <td class="text-center">
+                                    {% if item.eficiencia_percentual >= 150 %}
+                                        <span class="badge badge-success">🚀 {{ item.eficiencia_percentual|int }}%</span>
+                                    {% elif item.eficiencia_percentual >= 90 %}
+                                        <span class="badge badge-primary">👍 {{ item.eficiencia_percentual|int }}%</span>
+                                    {% elif item.eficiencia_percentual >= 70 %}
+                                        <span class="badge badge-warning">⚠️ {{ item.eficiencia_percentual|int }}%</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">🔻 {{ item.eficiencia_percentual|int }}%</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td class="text-end">
+                                    {% if item.correcao_solicitada %}
+                                        <span class="badge badge-warning" title="Aguardando Gestor">Em Análise</span>
+                                    {% elif item.correcao_aprovada_por %}
+                                        <span class="badge badge-info" title="Aprovado por Gestão">Corrigido</span>
+                                    {% else %}
+                                        <i class="fas fa-check-circle text-success opacity-50 fa-lg" title="Validado"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <div class="mb-3 opacity-25">
+                                        <i class="fas fa-folder-open fa-3x"></i>
+                                    </div>
+                                    Nenhum registro encontrado no seu histórico.<br>
+                                    Clique em <strong>Novo Lançamento</strong> para apontar sua primeira atividade.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-white py-3 border-0">
+                <nav aria-label="Navegação">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('operacao.historico', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <li class="page-item disabled">
+                            <span class="page-link text-muted border-0">
+                                Página {{ pagination.page }} de {{ pagination.pages }}
+                            </span>
+                        </li>
+
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('operacao.historico', page=pagination.next_num) if pagination.has_next else '#' }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE LANÇAMENTO AVULSO (COM BUSCA DINÂMICA) -->
+<div class="modal fade" id="modalLancamentoAvancado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-search me-2"></i> Lançamento Avulso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ url_for('operacao.novo_lancamento') }}" method="POST">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="atividade_id" id="adv_atividade_id" required>
+                    
+                    <div class="form-group p-0 mb-3 position-relative">
+                        <label class="fw-bold mb-1">Buscar Atividade *</label>
+                        <input type="text" id="adv_search" class="form-control" placeholder="Digite o nome da atividade..." onkeyup="buscarAtividade(this.value)" autocomplete="off">
+                        <!-- Dropdown de Resultados do AJAX -->
+                        <div id="adv_results" class="list-group position-absolute w-100 shadow-sm" style="z-index: 1050; display:none; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+
+                    <div class="form-group p-0 mb-3">
+                        <label class="fw-bold mb-1">Cronologia / Recorrência *</label>
+                        <select class="form-select" name="cronologia" required>
+                            <option value="Diário" selected>Diário (Rotina comum)</option>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Quinzenal">Quinzenal</option>
+                            <option value="Mensal">Mensal</option>
+                            <option value="Bimestral">Bimestral</option>
+                            <option value="Trimestral">Trimestral</option>
+                            <option value="Quadrimestral">Quadrimestral</option>
+                            <option value="Semestral">Semestral</option>
+                            <option value="Anual">Anual</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <div class="form-group p-0">
+                                <label class="fw-bold mb-1">Início</label>
+                                <input type="datetime-local" class="form-control" name="data_hora_inicio" id="adv_inicio" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group p-0">
+                                <label class="fw-bold mb-1">Fim (Entrega)</label>
+                                <input type="datetime-local" class="form-control" name="data_hora_fim" id="adv_fim" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group p-0">
+                        <label class="mb-1 fw-bold">Observação (Opcional)</label>
+                        <textarea class="form-control" name="observacao" rows="2" placeholder="Descreva imprevistos ou detalhes..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-0 pt-0 pb-4 pe-4">
+                    <button type="button" class="btn btn-outline-secondary btn-round" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-round fw-bold px-4">
+                        <i class="fas fa-check me-2"></i> Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Sistema de Busca Dinâmica via API do Flask
+    function buscarAtividade(termo) {
+        const resultsDiv = document.getElementById('adv_results');
+        if(termo.length < 3) { 
+            resultsDiv.style.display = 'none'; 
+            return; 
+        }
+        
+        fetch("{{ url_for('api.buscar_atividades') }}?q=" + termo)
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                if(data.length === 0) {
+                    html = '<div class="list-group-item text-muted">Nenhuma atividade encontrada...</div>';
+                } else {
+                    data.forEach(a => {
+                        html += `<a href="javascript:void(0)" class="list-group-item list-group-item-action" onclick="selecionarAtividade(${a.id}, '${a.titulo.replace(/'/g, "\\'")}')">
+                            <strong>${a.titulo}</strong><br>
+                            <small class="text-muted"><i class="fas fa-bullseye me-1"></i> Meta SLA: ${a.meta}</small>
+                        </a>`;
+                    });
+                }
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            }).catch(err => console.error(err));
+    }
+
+    function selecionarAtividade(id, titulo) {
+        document.getElementById('adv_atividade_id').value = id;
+        document.getElementById('adv_search').value = titulo;
+        document.getElementById('adv_results').style.display = 'none';
+    }
+
+    function prepararModalAvancado() {
+        document.getElementById('adv_search').value = '';
+        document.getElementById('adv_atividade_id').value = '';
+        document.getElementById('adv_results').style.display = 'none';
+
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('adv_fim').value = now.toISOString().slice(0, 16);
+        
+        const past = new Date(now.getTime() - 30 * 60000); // Subtrai 30min como default
+        document.getElementById('adv_inicio').value = past.toISOString().slice(0, 16);
+    }
+</script>
+{% endblock %}

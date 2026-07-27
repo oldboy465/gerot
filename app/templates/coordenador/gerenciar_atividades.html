@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div>
+        <h3 class="fw-bold mb-3">Engenharia de Rotinas</h3>
+        <h6 class="op-7 mb-2">Catálogo de serviços e definição de SLAs</h6>
+    </div>
+    <div class="ms-md-auto py-2 py-md-0">
+        <button class="btn btn-primary btn-round" data-bs-toggle="modal" data-bs-target="#modalNovaAtividade">
+            <i class="fas fa-plus-circle me-2"></i> Nova Atividade
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-round">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 30%;">Atividade / Descrição</th>
+                                <th>Responsável</th>
+                                <th>Meta (SLA)</th>
+                                <th>Tipo</th>
+                                <th>Tarefas</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for atv in atividades %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark fs-6">{{ atv.titulo }}</div>
+                                    <small class="text-muted d-block text-truncate" style="max-width: 300px;">
+                                        {{ atv.descricao or 'Sem descrição definida.' }}
+                                    </small>
+                                </td>
+                                
+                                <td>
+                                    {% if atv.responsavel %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-xs me-2">
+                                                <span class="avatar-title rounded-circle bg-primary text-white">{{ atv.responsavel.username[0]|upper }}</span>
+                                            </div>
+                                            <small>{{ atv.responsavel.nome_completo.split(' ')[0] }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="badge badge-outline-secondary">Equipe (Geral)</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td>
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-hourglass-half me-1"></i> {{ atv.tempo_estimado_valor }} {{ atv.tempo_estimado_unidade }}
+                                    </span>
+                                </td>
+                                
+                                <td>
+                                    {% if atv.is_rotineira %}
+                                        <span class="badge badge-success">Rotina</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Projeto</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td>
+                                    <button class="btn btn-black btn-round btn-xs" 
+                                            onclick="abrirModalTarefa('{{ atv.id }}', '{{ atv.titulo }}')">
+                                        <i class="fas fa-list-ul me-1"></i> {{ atv.tarefas.count() }} Etapas
+                                    </button>
+                                </td>
+                                
+                                <td class="text-end">
+                                    <a href="{{ url_for('gestao.excluir_atividade', id=atv.id) }}" 
+                                       class="btn btn-icon btn-link btn-danger btn-xs"
+                                       onclick="return confirm('ATENÇÃO: Excluir esta atividade pode afetar o histórico. Continuar?')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <i class="fas fa-clipboard-list fa-3x text-muted opacity-25 mb-3"></i>
+                                        <p class="text-muted">Nenhuma atividade cadastrada para este setor.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovaAtividade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-drafting-compass me-2"></i> Cadastrar Rotina</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ url_for('gestao.nova_atividade') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Título da Atividade</label>
+                            <input type="text" class="form-control" name="titulo" placeholder="Ex: Conciliação Bancária" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Atribuir a</label>
+                            <select class="form-select" name="responsavel_id">
+                                <option value="">-- Toda a Equipe --</option>
+                                {% for u in usuarios %}
+                                    <option value="{{ u.id }}">{{ u.nome_completo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Descrição (Instrução Rápida / POP)</label>
+                        <textarea class="form-control" name="descricao" rows="2" placeholder="Descreva brevemente o procedimento..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tempo Estimado (SLA)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="tempo_valor" min="1" required>
+                                <select class="form-select" name="tempo_unidade" style="max-width: 120px;">
+                                    <option value="minutos" selected>Minutos</option>
+                                    <option value="horas">Horas</option>
+                                    <option value="dias">Dias</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center pt-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_rotineira" id="checkRotina" checked>
+                                <label class="form-check-label" for="checkRotina">
+                                    Marcar como rotina recorrente
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-0 pt-0 pb-4">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-round fw-bold px-4">Salvar Atividade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovaTarefa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-indent me-2"></i> Adicionar Micro-Tarefa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ url_for('gestao.nova_tarefa') }}" method="POST">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="atividade_id" id="task_atv_id">
+                    
+                    <div class="alert alert-secondary p-2 mb-3">
+                        <small class="text-uppercase text-muted fw-bold d-block">Vinculado à atividade:</small>
+                        <span class="fw-bold text-dark" id="task_atv_titulo">...</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição da Tarefa</label>
+                        <input type="text" class="form-control" name="descricao" placeholder="Ex: Baixar arquivo XML" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Peso / Impacto (%)</label>
+                        <input type="number" class="form-control" name="impacto_percentual" min="0" max="100" value="0">
+                        <small class="text-muted">Use para calcular progresso parcial.</small>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-0 pt-0 pb-4">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-dark btn-round px-4">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function abrirModalTarefa(id, titulo) {
+        document.getElementById('task_atv_id').value = id;
+        document.getElementById('task_atv_titulo').innerText = titulo;
+        var modalTarefa = new bootstrap.Modal(document.getElementById('modalNovaTarefa'));
+        modalTarefa.show();
+    }
+</script>
+{% endblock %}

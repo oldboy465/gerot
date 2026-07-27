@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div>
+        <h3 class="fw-bold mb-3"><i class="fas fa-sitemap text-secondary me-2"></i> Estrutura Organizacional</h3>
+        <h6 class="op-7 mb-2">Gerenciamento de departamentos e hierarquia corporativa</h6>
+    </div>
+    <div class="ms-md-auto py-2 py-md-0">
+        <a href="{{ url_for('admin.novo_setor') }}" class="btn btn-success btn-round shadow-sm fw-bold">
+            <i class="fas fa-plus-circle me-2"></i> Novo Setor
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-round shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-head-bg-secondary mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Nome do Setor</th>
+                                <th>Sigla / Código</th>
+                                <th>Hierarquia (Pai)</th>
+                                <th class="text-center">Complexidade</th>
+                                <th class="text-center">Equipe</th>
+                                <th class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for setor in setores %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark" style="font-size: 1.05em;">{{ setor.nome }}</div>
+                                    {% if setor.responsavel_id %}
+                                        <small class="text-muted"><i class="fas fa-user-tie me-1"></i>Resp. Definido</small>
+                                    {% else %}
+                                        <small class="text-warning fst-italic"><i class="fas fa-exclamation-circle me-1"></i>Sem gestor</small>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="badge badge-outline-dark fw-bold px-2 py-1">{{ setor.sigla }}</span>
+                                    <div class="small text-muted mt-1"><i class="fas fa-barcode me-1"></i>{{ setor.codigo_interno }}</div>
+                                </td>
+
+                                <td>
+                                    {% if setor.pai %}
+                                        <span class="text-primary fw-bold"><i class="fas fa-level-up-alt me-1"></i>{{ setor.pai.sigla }}</span>
+                                        <br>
+                                        <small class="text-muted">{{ setor.pai.nome }}</small>
+                                    {% else %}
+                                        <span class="badge badge-black shadow-sm"><i class="fas fa-crown me-1"></i>Raiz / Diretoria</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    {% if setor.nivel_complexidade == 'Alta' %}
+                                        <span class="badge badge-danger shadow-sm">Alta</span>
+                                    {% elif setor.nivel_complexidade == 'Média' %}
+                                        <span class="badge badge-warning shadow-sm text-dark">Média</span>
+                                    {% else %}
+                                        <span class="badge badge-success shadow-sm">Baixa</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="avatar-group d-flex justify-content-center">
+                                        <span class="avatar avatar-sm" title="Colaboradores Vinculados">
+                                            <span class="avatar-title rounded-circle border border-white bg-info shadow-sm fw-bold">
+                                                {{ setor.usuarios.count() }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="form-button-action justify-content-end">
+                                        <!-- Botão Editar CRUD Funcional -->
+                                        <a href="{{ url_for('admin.editar_setor', id=setor.id) }}" 
+                                           class="btn btn-link btn-primary btn-lg" 
+                                           title="Editar Estrutura" data-bs-toggle="tooltip">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        
+                                        <!-- Botão Excluir CRUD Funcional (Oculto para o ROOT) -->
+                                        {% if setor.sigla != 'ROOT' %}
+                                        <form action="{{ url_for('admin.excluir_setor', id=setor.id) }}" 
+                                              method="POST" style="display:inline;" 
+                                              onsubmit="return confirm('Deseja realmente excluir o setor {{ setor.sigla }}? Esta ação não poderá ser desfeita e falhará se houver histórico vinculado.');">
+                                            <button type="submit" class="btn btn-link btn-danger btn-lg" title="Remover Setor" data-bs-toggle="tooltip">
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <!-- Placeholder para alinhar quando não tem botão excluir -->
+                                        <button class="btn btn-link btn-danger btn-lg opacity-0" disabled style="cursor: default;">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <div class="mb-3 opacity-25">
+                                        <i class="fas fa-building fa-3x"></i>
+                                    </div>
+                                    Nenhum setor cadastrado além do ROOT.<br>
+                                    Clique em <strong>Novo Setor</strong> para expandir a estrutura da empresa.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light border-0 py-3 rounded-bottom text-muted small text-center">
+                Total de departamentos mapeados na estrutura organizacional: <strong>{{ setores|length }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Inicializa os tooltips para os botões de ação ficarem mais interativos
+    document.addEventListener("DOMContentLoaded", function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
+{% endblock %}
