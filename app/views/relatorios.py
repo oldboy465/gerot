@@ -4,6 +4,7 @@ from datetime import datetime
 from app.models.lancamento import Lancamento
 from app.models.usuario import Usuario
 from app.models.setor import Setor
+from app.models.atividade import AtividadePadrao
 from app.services.exportacao import ExportacaoService
 
 relatorios_bp = Blueprint('relatorios', __name__)
@@ -35,8 +36,8 @@ def gerador():
     texto_wpp = None
 
     if request.method == 'POST':
-        acao = request.form.get('acao') # 'excel', 'pdf', ou 'whatsapp'
-        
+        acao = request.form.get('acao') or request.form.get('exportar') # 'excel', 'impressao', ou 'whatsapp'
+
         data_inicio = request.form.get('data_inicio')
         data_fim = request.form.get('data_fim')
         setor_id = request.form.get('setor_id')
@@ -59,7 +60,7 @@ def gerador():
                 periodo_str = f"A partir de {dt_inicio.strftime('%d/%m/%Y')}"
             except ValueError:
                 pass
-        
+
         if data_fim:
             try:
                 dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
@@ -80,21 +81,31 @@ def gerador():
             return redirect(url_for('relatorios.gerador'))
 
         # --- ROTAS DE EXPORTAÇÃO BASEADA NA AÇÃO ---
-        
+
         if acao == 'excel':
             return ExportacaoService.gerar_excel(lancamentos)
-            
-        elif acao == 'pdf':
+
+        elif acao in ['pdf', 'impressao']:
             # Renderiza um HTML limpo para impressão (Geração de PDF nativa do navegador)
             return render_template('gestao/relatorio_impressao.html', 
                                    lancamentos=lancamentos, 
-                                   periodo=periodo_str)
-                                   
+                                   periodo=periodo_str,
+                                   now=datetime.utcnow().strftime('%d/%m/%Y %H:%M'))
+
         elif acao == 'whatsapp':
-            setor_nome = Setor.query.get(setor_id).nome if setor_id else "Todos"
-            usuario_nome = Usuario.query.get(usuario_id).nome_completo if usuario_id else "Todos"
-            
+            setor_obj = Setor.query.get(setor_id) if setor_id else None
+            setor_nome = setor_obj.nome if setor_obj else "Todos"
+
+            user_obj = Usuario.query.get(usuario_id) if usuario_id else None
+            usuario_nome = user_obj.nome_completo if user_obj else "Todos"
+
             texto_wpp = ExportacaoService.gerar_texto_whatsapp(lancamentos, periodo_str, setor_nome, usuario_nome)
-            # Ao cair aqui, o render_template no final da função vai devolver a página com a variável texto_wpp preenchida
 
     return render_template('gestao/relatorios.html', setores=setores, usuarios=usuarios, texto_wpp=texto_wpp)
+
+@relatorios_bp.route('/ficha/<int:id>')
+def ficha_tecnica(id):
+    """Renderiza a Ficha Técnica / Procedimento Operacional Padrão (POP)"""
+    atividade = AtividadePadrao.query.get_or_404(id)
+    now_date = datetime.utcnow().strftime('%d/%m/%Y %H:%M')
+    return render_template('relatorios/ficha_padrao.html', atividade=atividade, now_date=now_date)

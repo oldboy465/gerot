@@ -106,7 +106,9 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 {% if setor.sigla != 'ROOT' %}
-                                    <a href="#" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" title="Editar">
+                                    <a href="{{ url_for('admin.editar_setor', id=setor.id) }}" 
+                                       class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" 
+                                       title="Editar Setor">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </a>
                                 {% else %}
