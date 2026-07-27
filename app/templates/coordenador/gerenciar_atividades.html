@@ -1,235 +1,195 @@
 {% extends "base.html" %}
+
+{% block title %}Engenharia de Rotinas | GEROT{% endblock %}
+
 {% block content %}
-
-<div class="mx-auto max-w-7xl" x-data="{ modalRotina: false, modalTarefa: false, atvPaiId: null, atvPaiTitulo: '' }">
-
-    <!-- PAGE HEADER -->
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<div class="space-y-6" x-data="{ modalNovaAtividade: false, modalTarefa: false, atvAtivaId: null, atvAtivaTitulo: '' }">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div>
-            <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
-                Engenharia de Rotinas
-            </h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-                Catálogo de serviços e definição de SLAs do setor
-            </p>
+            <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                <i class="fa-solid fa-list-check text-amber-600"></i>
+                <span>Engenharia de Rotinas e Catálogo de Serviços</span>
+            </h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Catálogo de serviços e definição de SLAs do setor.</p>
         </div>
-
-        <div>
-            <button @click="modalRotina = true"
-                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 shadow-sm">
-                <i class="fa-solid fa-plus"></i>
-                Nova Atividade
-            </button>
-        </div>
+        <button @click="modalNovaAtividade = true" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/20 transition flex items-center gap-2 justify-center cursor-pointer">
+            <i class="fa-solid fa-plus"></i>
+            <span>Nova Atividade</span>
+        </button>
     </div>
 
-    <!-- TABLE CARD -->
-    <div class="tailwind-card overflow-hidden mb-8">
-        <div class="border-b border-slate-100 px-6 py-4 dark:border-slate-800 flex items-center justify-between">
-            <h4 class="font-bold text-slate-800 dark:text-white">
-                Catálogo de Atividades
-            </h4>
-            <span class="text-xs text-slate-500">
-                Total: {{ atividades|length }}
-            </span>
+    <!-- Tabela de Atividades -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+            <h2 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-cubes text-slate-400"></i>
+                <span>Catálogo de Atividades ({{ CalculoBI.formatar_numero_br(atividades|length, 0) }})</span>
+            </h2>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-                    <tr>
-                        <th scope="col" class="px-6 py-3.5">Atividade / Descrição</th>
-                        <th scope="col" class="px-6 py-3.5">Responsável</th>
-                        <th scope="col" class="px-6 py-3.5">Meta (SLA)</th>
-                        <th scope="col" class="px-6 py-3.5">Tipo</th>
-                        <th scope="col" class="px-6 py-3.5">Tarefas</th>
-                        <th scope="col" class="px-6 py-3.5 text-right">Ações</th>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="px-6 py-3.5">Atividade / Descrição</th>
+                        <th class="px-6 py-3.5">Responsável</th>
+                        <th class="px-6 py-3.5">Meta (SLA)</th>
+                        <th class="px-6 py-3.5">Tipo</th>
+                        <th class="px-6 py-3.5">Sub-Etapas</th>
+                        <th class="px-6 py-3.5 text-center">Ações</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    {% for atv in atividades %}
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td class="px-6 py-4">
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-900 dark:text-white">{{ atv.titulo }}</span>
-                                <span class="text-xs text-slate-400 line-clamp-1">{{ atv.descricao or 'Sem descrição definida.' }}</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            {% if atv.responsavel %}
-                                <div class="flex items-center gap-2">
-                                    <div class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
-                                        {{ atv.responsavel.username[0]|upper }}
-                                    </div>
-                                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                        {{ atv.responsavel.nome_completo.split(' ')[0] }}
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-sm text-slate-700 dark:text-slate-300">
+                    {% if atividades %}
+                        {% for atv in atividades %}
+                            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition">
+                                <td class="px-6 py-4">
+                                    <p class="font-bold text-slate-800 dark:text-slate-100">{{ atv.titulo }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{{ atv.descricao or 'Sem descrição definida.' }}</p>
+                                </td>
+                                <td class="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-400">
+                                    {% if atv.responsavel %}
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-[10px]">
+                                                {{ atv.responsavel.username[0]|upper }}
+                                            </span>
+                                            <span>{{ atv.responsavel.nome_completo.split(' ')[0] }}</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="text-slate-400 font-normal">Equipe (Geral)</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                                        <i class="fa-solid fa-stopwatch me-1.5 text-amber-600"></i>
+                                        {{ CalculoBI.formatar_numero_br(atv.tempo_estimado_valor, 0) }} {{ atv.tempo_estimado_unidade }}
                                     </span>
-                                </div>
-                            {% else %}
-                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                                    Equipe (Geral)
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">
-                            {{ atv.tempo_estimado_valor }} {{ atv.tempo_estimado_unidade }}
-                        </td>
-                        <td class="px-6 py-4">
-                            {% if atv.is_rotineira %}
-                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                                    Rotina
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                                    Projeto
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                <i class="fa-solid fa-list-check text-slate-400"></i>
-                                {{ atv.tarefas.count() }} Etapas
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <button @click="atvPaiId = {{ atv.id }}; atvPaiTitulo = '{{ atv.titulo }}'; modalTarefa = true" 
-                                        class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" 
-                                        title="Adicionar Sub-tarefa">
-                                    <i class="fa-solid fa-square-plus"></i>
-                                </button>
-                                <a href="{{ url_for('relatorios.ficha_tecnica', id=atv.id) }}" 
-                                   class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" 
-                                   title="Ver Ficha Técnica (POP)">
-                                    <i class="fa-solid fa-file-lines"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if atv.is_rotineira %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                                            Rotina
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                            Projeto
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                        {{ CalculoBI.formatar_numero_br(atv.tarefas.count(), 0) }} Etapa(s)
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center space-x-2">
+                                    <button @click="modalTarefa = true; atvAtivaId = '{{ atv.id }}'; atvAtivaTitulo = '{{ atv.titulo|escape }}'" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 transition cursor-pointer">
+                                        <i class="fa-solid fa-plus-circle"></i>
+                                        <span>Micro-Tarefa</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
                     {% else %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                            <i class="fa-solid fa-list-check text-3xl text-slate-300 mb-2"></i>
-                            <p class="text-sm font-medium">Nenhuma atividade cadastrada para este setor.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-sm">
+                                Nenhuma atividade cadastrada para este setor.
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- MODAL 1: CADASTRAR ROTINA -->
-    <div x-show="modalRotina" 
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-tailwind p-4" x-cloak>
-        
-        <div class="tailwind-card w-full max-w-xl p-6 sm:p-8" @click.outside="modalRotina = false">
-            <div class="mb-6 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-                <h5 class="text-lg font-bold text-slate-900 dark:text-white">Cadastrar Rotina</h5>
-                <button @click="modalRotina = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Modal Nova Atividade -->
+    <div x-show="modalNovaAtividade" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalNovaAtividade = false">
+            <div class="px-6 py-4 bg-amber-600 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <span>Cadastrar Nova Rotina</span>
+                </h3>
+                <button type="button" @click="modalNovaAtividade = false" class="text-amber-100 hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
 
-            <form method="POST" action="{{ url_for('gestao.nova_atividade') }}" class="space-y-4">
+            <form action="{{ url_for('gestao.nova_atividade') }}" method="POST" class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Título da Atividade</label>
-                    <input type="text" name="titulo" required class="form-input-tailwind" placeholder="Ex: Conciliação Bancária">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Título da Atividade *</label>
+                    <input type="text" name="titulo" required placeholder="Ex: Análise de Contratos" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Atribuir a</label>
-                    <select name="responsavel_id" class="form-input-tailwind">
-                        <option value="">-- Toda a Equipe --</option>
-                        {% for u in usuarios %}
-                            <option value="{{ u.id }}">{{ u.nome_completo }}</option>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Setor *</label>
+                    <select name="setor_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition" required>
+                        {% for s in setores %}
+                            <option value="{{ s.id }}" {% if current_user.setor_id == s.id %}selected{% endif %}>{{ s.sigla }} - {{ s.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Descrição (Instrução Rápida / POP)</label>
-                    <textarea name="descricao" rows="3" class="form-input-tailwind" placeholder="Passo a passo resumido para execução..."></textarea>
-                </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Tempo Estimado (SLA)</label>
-                        <input type="number" name="tempo_estimado_valor" required min="1" class="form-input-tailwind" placeholder="30">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Tempo Estimado (SLA)</label>
+                        <input type="number" name="tempo_estimado_valor" value="30" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Unidade</label>
-                        <select name="tempo_estimado_unidade" class="form-input-tailwind">
-                            <option value="minutos">Minutos</option>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Unidade</label>
+                        <select name="tempo_estimado_unidade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition">
+                            <option value="minutos" selected>Minutos</option>
                             <option value="horas">Horas</option>
                             <option value="dias">Dias</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="is_rotineira" value="1" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Marcar como rotina recorrente</span>
-                    </label>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Descrição / POP</label>
+                    <textarea name="descricao" rows="3" placeholder="Instruções básicas para o operador..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition"></textarea>
                 </div>
 
-                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" @click="modalRotina = false" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">Cancelar</button>
-                    <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">Salvar Atividade</button>
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" @click="modalNovaAtividade = false" class="px-5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/20 transition cursor-pointer">Salvar Atividade</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL 2: ADICIONAR MICRO-TAREFA -->
-    <div x-show="modalTarefa" 
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-tailwind p-4" x-cloak>
-        
-        <div class="tailwind-card w-full max-w-lg p-6 sm:p-8" @click.outside="modalTarefa = false">
-            <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-                <h5 class="text-lg font-bold text-slate-900 dark:text-white">Adicionar Micro-Tarefa</h5>
-                <button @click="modalTarefa = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Modal Nova Micro-Tarefa -->
+    <div x-show="modalTarefa" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalTarefa = false">
+            <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Adicionar Micro-Tarefa</span>
+                </h3>
+                <button type="button" @click="modalTarefa = false" class="text-emerald-100 hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
 
-            <p class="text-xs text-slate-500 mb-4">
-                Vinculado à atividade: <strong class="text-slate-800 dark:text-white" x-text="atvPaiTitulo"></strong>
-            </p>
+            <form action="{{ url_for('operacao.cadastrar_micro_tarefa') }}" method="POST" class="p-6 space-y-4">
+                <input type="hidden" name="atividade_id" :value="atvAtivaId">
 
-            <form method="POST" action="{{ url_for('gestao.nova_tarefa') }}" class="space-y-4">
-                <input type="hidden" name="atividade_id" :value="atvPaiId">
-
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Descrição da Tarefa</label>
-                    <input type="text" name="descricao" required class="form-input-tailwind" placeholder="Ex: Conferência do extrato...">
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl border border-emerald-200 dark:border-emerald-700">
+                    <p class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Atividade Vinculada:</p>
+                    <p class="text-sm font-bold text-emerald-950 dark:text-emerald-200 mt-0.5" x-text="atvAtivaTitulo"></p>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">Peso / Impacto (%)</label>
-                    <input type="number" name="impacto_percentual" step="0.1" value="0.0" class="form-input-tailwind">
-                    <span class="mt-1 block text-[10px] text-slate-400">Use para calcular progresso parcial.</span>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Descrição da Tarefa *</label>
+                    <input type="text" name="descricao" required placeholder="Ex: CONFERÊNCIA DE DOCUMENTOS" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm uppercase outline-none transition">
                 </div>
 
-                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" @click="modalTarefa = false" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">Fechar</button>
-                    <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition">Adicionar</button>
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" @click="modalTarefa = false" class="px-5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20 transition cursor-pointer">Adicionar Etapa</button>
                 </div>
             </form>
         </div>
     </div>
-
 </div>
-
-{% endblock %}
-{% block scripts %}
 {% endblock %}

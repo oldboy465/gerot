@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Executivo | GEROT{% endblock %}
+{% block content %}
+<div class="space-y-6">
+    
+    <!-- Filtros Globais e Botão de Exportação para PowerPoint -->
+    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+        <form method="GET" action="{{ url_for('gestao.dashboard') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Filtrar por Setor</label>
+                <select name="setor_id" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm">
+                    <option value="">Todos os Setores</option>
+                    {% for s in setores %}
+                    <option value="{{ s.id }}" {% if filtro_setor_id == s.id %}selected{% endif %}>{{ s.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Data Início</label>
+                <input type="date" name="data_inicio" value="{{ filtro_data_inicio }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Data Fim</label>
+                <input type="date" name="data_fim" value="{{ filtro_data_fim }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Status Prazo</label>
+                <select name="status_prazo" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm">
+                    <option value="">Todos</option>
+                    <option value="no_prazo" {% if filtro_status_prazo == 'no_prazo' %}selected{% endif %}>No Prazo</option>
+                    <option value="atrasado" {% if filtro_status_prazo == 'atrasado' %}selected{% endif %}>Atrasado</option>
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow transition flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Filtrar</span>
+                </button>
+                <a href="{{ url_for('relatorios.gerar_pptx', setor_id=filtro_setor_id, data_inicio=filtro_data_inicio, data_fim=filtro_data_fim, status_prazo=filtro_status_prazo) }}" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow transition flex items-center justify-center" title="Gerar Relatório em PowerPoint (PPTX)">
+                    <i class="fa-solid fa-file-powerpoint"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cards de Indicadores (KPIs) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+            <div class="p-3 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg"><i class="fa-solid fa-clock text-xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Horas Produzidas</p>
+                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ kpis.horas }}</h4>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+            <div class="p-3 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-lg"><i class="fa-solid fa-chart-pie text-xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Eficiência Média</p>
+                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ kpis.eficiencia }}</h4>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+            <div class="p-3 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-lg"><i class="fa-solid fa-users text-xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Colaboradores</p>
+                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ kpis.usuarios }}</h4>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+            <div class="p-3 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-lg"><i class="fa-solid fa-sitemap text-xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Setores Ativos</p>
+                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ kpis.setores }}</h4>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+            <div class="p-3 bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 rounded-lg"><i class="fa-solid fa-list-check text-xl"></i></div>
+            <div>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Atividades Base</p>
+                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ kpis.rotinas }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Indicadores SLA Atualizados (Em Andamento, Concluído, Cancelado) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Status SLA: Concluído</span>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">{{ status_sla_counts['Concluído'] }}</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-full text-emerald-600"><i class="fa-solid fa-circle-check text-2xl"></i></div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Status SLA: Em Andamento</span>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">{{ status_sla_counts['Em Andamento'] }}</h3>
+            </div>
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-full text-blue-600"><i class="fa-solid fa-spinner text-2xl"></i></div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <span class="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Status SLA: Cancelado</span>
+                <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">{{ status_sla_counts['Cancelado'] }}</h3>
+            </div>
+            <div class="p-3 bg-red-50 dark:bg-red-900/30 rounded-full text-red-600"><i class="fa-solid fa-ban text-2xl"></i></div>
+        </div>
+    </div>
+
+    <!-- Gráficos de Eficiência e Setor -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 1: Meta de Eficiência Global -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700">
+            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center space-x-2">
+                <i class="fa-solid fa-chart-line text-blue-600"></i>
+                <span>Eficiência Mensal vs. Meta (100%)</span>
+            </h3>
+            <div class="relative h-72">
+                <canvas id="chartEficienciaMeta"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Eficiência por Setor (Vinculado ao Filtro) -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700">
+            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center space-x-2">
+                <i class="fa-solid fa-chart-bar text-indigo-600"></i>
+                <span>Eficiência Média por Setor</span>
+            </h3>
+            <div class="relative h-72">
+                <canvas id="chartEficienciaSetor"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de Linha: Meta de Eficiência
+    const ctxMeta = document.getElementById('chartEficienciaMeta').getContext('2d');
+    const chartMeta = new Chart(ctxMeta, {
+        type: 'line',
+        data: {
+            labels: {{ chart_eficiencia.labels | tojson }},
+            datasets: [{
+                label: 'Eficiência Média (%)',
+                data: {{ chart_eficiencia.data | tojson }},
+                borderColor: '#2563EB',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.3
+            }, {
+                label: 'Meta (100%)',
+                data: {{ chart_eficiencia.meta | tojson }},
+                borderColor: '#DC2626',
+                borderDash: [5, 5],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 200 }
+            }
+        }
+    });
+
+    // Gráfico de Barras: Eficiência por Setor
+    const ctxSetor = document.getElementById('chartEficienciaSetor').getContext('2d');
+    const chartSetor = new Chart(ctxSetor, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_efic_setor.labels | tojson }},
+            datasets: [{
+                label: 'Eficiência por Setor (%)',
+                data: {{ chart_efic_setor.data | tojson }},
+                backgroundColor: '#4F46E5',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 200 }
+            }
+        }
+    });
+</script>
+{% endblock %}

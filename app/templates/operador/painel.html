@@ -1,337 +1,223 @@
 {% extends "base.html" %}
+{% block title %}Painel de Lançamento | GEROT{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
-    <div>
-        <h3 class="fw-bold mb-3">Painel de Produção</h3>
-        <h6 class="op-7 mb-2">Registrar e acompanhar atividades diárias</h6>
-    </div>
-    <div class="ms-md-auto py-2 py-md-0 d-flex gap-2">
-        <!-- Botão adicionado para Lançamento Avulso direto no Painel também -->
-        <button class="btn btn-primary btn-round shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLancamentoAvancado" onclick="prepararModalAvancado()">
-            <i class="fas fa-search me-2"></i> Lançamento Avulso
-        </button>
-        <span class="badge badge-primary fw-bold fs-6 d-flex align-items-center shadow-sm">
-            <i class="fas fa-calendar-day me-2"></i> {{ agora.strftime('%d/%m/%Y') }}
-        </span>
-    </div>
-</div>
+<div x-data="{ openTaskModal: false, selectedAtividadeId: '' }" class="space-y-6">
 
-<div class="row">
-    <div class="col-lg-8 mb-4">
-        <h4 class="fw-bold mb-3 text-muted ms-1"><i class="fas fa-play-circle me-2"></i> Iniciar Atividade (Rotina Fixa)</h4>
-        
-        <div class="row g-3">
-            {% if atividades %}
-                {% for atv in atividades %}
-                <div class="col-12 col-md-6">
-                    <div class="card card-stats card-round card-hover-effect cursor-pointer h-100 shadow-sm" 
-                         onclick="abrirModalLancamento('{{ atv.id }}', '{{ atv.titulo }}', '{{ atv.tempo_estimado_valor }} {{ atv.tempo_estimado_unidade }}')"
-                         style="transition: all 0.3s ease; border-left: 5px solid var(--primary-color);">
-                        <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-icon">
-                                    <div class="icon-big text-center icon-primary bubble-shadow-small">
-                                        <i class="fas fa-stopwatch"></i>
-                                    </div>
-                                </div>
-                                <div class="col col-stats ms-3 ms-sm-0">
-                                    <div class="numbers">
-                                        <p class="card-category text-primary fw-bold mb-1">
-                                            SLA: {{ atv.tempo_estimado_valor }}{{ atv.tempo_estimado_unidade[0] }}
-                                        </p>
-                                        <h4 class="card-title mb-1" style="font-size: 1.1rem;">{{ atv.titulo }}</h4>
-                                        <small class="text-muted">{{ atv.descricao[:50] }}...</small>
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-chevron-right text-muted opacity-25"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12">
-                    <div class="alert alert-warning border-0 shadow-sm" role="alert">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                            <div>
-                                <h5 class="alert-heading fw-bold mb-1">Nenhuma atividade fixa vinculada</h5>
-                                <p class="mb-0">Seu perfil ainda não possui rotinas fixas na tela. Você pode realizar o apontamento usando o botão <strong>Lançamento Avulso</strong> acima.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+    <!-- Cabeçalho do Painel -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-sky-600"></i> Painel de Apontamento Operacional
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">Registre a execução das suas rotinas e anexe as evidências comprobatórias.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('operacao.historico') }}" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition border border-slate-300">
+                <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Meu Histórico
+            </a>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card card-round shadow-sm border-0">
-            <div class="card-header bg-white">
-                <div class="card-head-row">
-                    <div class="card-title fw-bold"><i class="fas fa-check-double text-success me-2"></i> Produção Hoje</div>
-                    <div class="card-tools">
-                        <span class="badge badge-success">{{ historico|length }} Entregas</span>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Formulário de Apontamento -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+                <i class="fa-solid fa-plus-circle text-sky-500"></i> Novo Apontamento de Produção
+            </h2>
+
+            <form action="{{ url_for('operacao.novo_lancamento') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+                
+                <!-- Atividade Macro -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label for="atividade_id" class="block text-sm font-semibold text-slate-700">Atividade / Serviço Macro <span class="text-red-500">*</span></label>
+                        <button type="button" @click="openTaskModal = true" class="text-xs font-semibold text-sky-600 hover:text-sky-800 flex items-center gap-1 transition">
+                            <i class="fa-solid fa-plus"></i> Criar Micro-tarefa
+                        </button>
+                    </div>
+                    <select name="atividade_id" id="atividade_id" x-model="selectedAtividadeId" required class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                        <option value="" disabled selected>Selecione uma atividade do catálogo...</option>
+                        {% for atv in atividades %}
+                        <option value="{{ atv.id }}">{{ atv.titulo }} (SLA: {{ CalculoBI.formatar_numero_br(atv.tempo_estimado_valor, 0) }} {{ atv.tempo_estimado_unidade }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Sub-tarefa & Cronologia -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="tarefa_id" class="block text-sm font-semibold text-slate-700 mb-1.5">Micro-tarefa / Etapa (Opcional)</label>
+                        <select name="tarefa_id" id="tarefa_id" class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                            <option value="">Sem sub-etapa vinculada</option>
+                            {% for atv in atividades %}
+                                {% for t in atv.tarefas %}
+                                <option value="{{ t.id }}" x-show="selectedAtividadeId == '{{ atv.id }}'">{{ t.descricao }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="cronologia" class="block text-sm font-semibold text-slate-700 mb-1.5">Cronologia / Frequência</label>
+                        <select name="cronologia" id="cronologia" class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                            <option value="Diário" selected>Diário</option>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Quinzenal">Quinzenal</option>
+                            <option value="Mensal">Mensal</option>
+                            <option value="Anual">Anual</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="card-list">
-                    {% if historico %}
-                        {% for item in historico %}
-                        <div class="item-list px-3 py-3 border-bottom">
-                            <div class="avatar">
-                                <span class="avatar-title rounded-circle border border-white bg-success">
-                                    <i class="fas fa-check"></i>
-                                </span>
+
+                <!-- Intervalo de Tempo -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="data_hora_inicio" class="block text-sm font-semibold text-slate-700 mb-1.5">Data/Hora Início <span class="text-red-500">*</span></label>
+                        <input type="datetime-local" name="data_hora_inicio" id="data_hora_inicio" required class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                    </div>
+                    <div>
+                        <label for="data_hora_fim" class="block text-sm font-semibold text-slate-700 mb-1.5">Data/Hora Fim <span class="text-red-500">*</span></label>
+                        <input type="datetime-local" name="data_hora_fim" id="data_hora_fim" required class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                    </div>
+                </div>
+
+                <!-- Upload de Evidência -->
+                <div>
+                    <label for="arquivo_evidencia" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Arquivo de Evidência / Comprovante (PDF, PNG, JPG - Máx 5MB)
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl bg-slate-50 hover:bg-slate-100 transition">
+                        <div class="space-y-1 text-center">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 mb-2"></i>
+                            <div class="flex text-sm text-slate-600">
+                                <label for="arquivo_evidencia" class="relative cursor-pointer bg-white rounded-md font-semibold text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500 px-2 py-0.5">
+                                    <span>Selecionar arquivo</span>
+                                    <input id="arquivo_evidencia" name="arquivo_evidencia" type="file" accept=".pdf,.png,.jpg,.jpeg" class="sr-only">
+                                </label>
+                                <p class="pl-1">ou arraste e solte aqui</p>
                             </div>
-                            <div class="info-user ms-3">
-                                <div class="username text-truncate fw-bold" style="max-width: 160px;" title="{{ item.atividade_referencia.titulo }}">
-                                    {{ item.atividade_referencia.titulo }}
-                                </div>
-                                <div class="status mt-1">
-                                    <small class="text-muted"><i class="far fa-clock me-1"></i>{{ item.data_hora_fim.strftime('%H:%M') }}</small> 
-                                    &bull; 
-                                    <span class="text-primary fw-bold">{{ item.duracao_minutos }} min</span>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                {% if item.eficiencia_percentual >= 100 %}
-                                    <span class="badge badge-success">{{ item.eficiencia_percentual|int }}%</span>
-                                {% elif item.eficiencia_percentual >= 70 %}
-                                    <span class="badge badge-warning">{{ item.eficiencia_percentual|int }}%</span>
-                                {% else %}
-                                    <span class="badge badge-danger">{{ item.eficiencia_percentual|int }}%</span>
-                                {% endif %}
-                            </div>
+                            <p class="text-xs text-slate-500">PDF, PNG ou JPG até 5MB</p>
                         </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-coffee fa-3x text-muted opacity-25 mb-3"></i>
-                            <p class="text-muted fw-bold">Nenhum lançamento hoje.</p>
-                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div>
+                    <label for="observacao" class="block text-sm font-semibold text-slate-700 mb-1.5">Observações / Detalhes</label>
+                    <textarea name="observacao" id="observacao" rows="3" placeholder="Insira observações relevantes sobre o trabalho entregue..." class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border"></textarea>
+                </div>
+
+                <!-- Ações -->
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="reset" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition">
+                        Limpar
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold transition shadow-sm">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> Registrar Apontamento
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Painel Lateral: Entregas de Hoje -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
+            <h2 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
+                <span><i class="fa-solid fa-calendar-day text-indigo-500 mr-2"></i> Realizados Hoje</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ historico|length }} registro(s)</span>
+            </h2>
+
+            <div class="space-y-3 overflow-y-auto flex-grow max-h-[500px] pr-1">
+                {% if historico %}
+                {% for h in historico %}
+                <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100/80 transition space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-900 truncate max-w-[180px]">
+                            {{ h.atividade_referencia.titulo if h.atividade_referencia else 'Sem Título' }}
+                        </span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {% if h.dentro_do_prazo %}bg-emerald-100 text-emerald-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if h.dentro_do_prazo %}No Prazo{% else %}Atrasado{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-500">
+                        <span>
+                            <i class="fa-regular fa-clock mr-1"></i>
+                            {{ h.data_hora_inicio.strftime('%H:%M') if h.data_hora_inicio else '--' }} - {{ h.data_hora_fim.strftime('%H:%M') if h.data_hora_fim else '--' }}
+                        </span>
+                        <span class="font-semibold text-slate-700">
+                            {{ CalculoBI.formatar_numero_br(h.duracao_minutos, 0) }} min
+                        </span>
+                    </div>
+                    {% if h.arquivo_evidencia %}
+                    <div class="pt-1">
+                        <a href="{{ url_for('operacao.baixar_evidencia', filename=h.arquivo_evidencia) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 hover:text-sky-800">
+                            <i class="fa-solid fa-paperclip"></i> Ver Evidência Anexada
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
-            </div>
-            <div class="card-footer text-center bg-white border-0 py-3">
-                <a href="{{ url_for('operacao.historico') }}" class="btn btn-label-secondary btn-sm btn-round fw-bold">
-                    Ver Histórico Completo
-                </a>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-10 text-slate-400 space-y-2">
+                    <i class="fa-solid fa-inbox text-3xl"></i>
+                    <p class="text-sm">Nenhum apontamento feito hoje.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
+
     </div>
-</div>
 
-<!-- MODAL DE LANÇAMENTO (QUANDO CLICA NO CARD) -->
-<div class="modal fade" id="modalLancamento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-primary text-white rounded-top-4">
-                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i> Registrar Execução</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Modal para Cadastrar Micro-Tarefa -->
+    <div x-show="openTaskModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" 
+         style="display: none;">
+         
+        <div @click.away="openTaskModal = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-sky-600"></i> Adicionar Micro-Tarefa
+                </h3>
+                <button @click="openTaskModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
-            
-            <form action="{{ url_for('operacao.novo_lancamento') }}" method="POST">
-                <div class="modal-body p-4">
-                    <input type="hidden" name="atividade_id" id="input_atividade_id">
-                    
-                    <div class="text-center mb-4 p-3 bg-light rounded border border-dashed">
-                        <small class="text-uppercase text-muted fw-bold">Atividade Selecionada</small>
-                        <h4 class="fw-bold text-dark mt-2" id="display_atividade_titulo">...</h4>
-                        <span class="badge badge-info shadow-sm" id="display_meta">Meta: ...</span>
-                    </div>
 
-                    <!-- INCLUSÃO DA CRONOLOGIA -->
-                    <div class="form-group p-0 mb-3">
-                        <label class="fw-bold mb-1">Cronologia / Recorrência *</label>
-                        <select class="form-select" name="cronologia" required>
-                            <option value="Diário" selected>Diário (Rotina comum)</option>
-                            <option value="Semanal">Semanal</option>
-                            <option value="Quinzenal">Quinzenal</option>
-                            <option value="Mensal">Mensal</option>
-                            <option value="Bimestral">Bimestral</option>
-                            <option value="Trimestral">Trimestral</option>
-                            <option value="Quadrimestral">Quadrimestral</option>
-                            <option value="Semestral">Semestral</option>
-                            <option value="Anual">Anual</option>
-                        </select>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <div class="form-group p-0">
-                                <label class="fw-bold mb-1">Início</label>
-                                <input type="datetime-local" class="form-control" name="data_hora_inicio" id="input_inicio" required>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="form-group p-0">
-                                <label class="fw-bold mb-1">Fim (Entrega)</label>
-                                <input type="datetime-local" class="form-control" name="data_hora_fim" id="input_fim" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group p-0">
-                        <label class="mb-1 fw-bold">Observação (Opcional)</label>
-                        <textarea class="form-control" name="observacao" rows="2" placeholder="Descreva imprevistos ou detalhes..."></textarea>
-                    </div>
+            <form action="{{ url_for('operacao.cadastrar_micro_tarefa') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="modal_atividade_id" class="block text-sm font-semibold text-slate-700 mb-1">Atividade Vinculada <span class="text-red-500">*</span></label>
+                    <select name="atividade_id" id="modal_atividade_id" required class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                        <option value="" disabled selected>Selecione a atividade pai...</option>
+                        {% for atv in atividades %}
+                        <option value="{{ atv.id }}">{{ atv.titulo }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                
-                <div class="modal-footer border-0 pt-0 pb-4 pe-4">
-                    <button type="button" class="btn btn-outline-secondary btn-round" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-round fw-bold px-4">
-                        <i class="fas fa-check me-2"></i> Confirmar
+
+                <div>
+                    <label for="modal_descricao" class="block text-sm font-semibold text-slate-700 mb-1">Descrição da Tarefa / Sub-etapa <span class="text-red-500">*</span></label>
+                    <input type="text" name="descricao" id="modal_descricao" placeholder="Ex: CONFERÊNCIA DE NOTA FISCAL" required class="w-full rounded-xl border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-sm p-2.5 bg-slate-50 border">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" @click="openTaskModal = false" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold transition">
+                        Salvar Etapa
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
 </div>
-
-<!-- MODAL DE LANÇAMENTO AVULSO (BUSCA) PARA ADMINS E USUÁRIOS SEM CARDS -->
-<div class="modal fade" id="modalLancamentoAvancado" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-secondary text-white rounded-top-4">
-                <h5 class="modal-title fw-bold"><i class="fas fa-search me-2"></i> Lançamento Avulso</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            
-            <form action="{{ url_for('operacao.novo_lancamento') }}" method="POST">
-                <div class="modal-body p-4">
-                    <input type="hidden" name="atividade_id" id="adv_atividade_id" required>
-                    
-                    <div class="form-group p-0 mb-3 position-relative">
-                        <label class="fw-bold mb-1">Buscar Atividade *</label>
-                        <input type="text" id="adv_search" class="form-control" placeholder="Digite o nome da atividade..." onkeyup="buscarAtividade(this.value)" autocomplete="off">
-                        <div id="adv_results" class="list-group position-absolute w-100 shadow-sm" style="z-index: 1050; display:none; max-height: 200px; overflow-y: auto;"></div>
-                    </div>
-
-                    <div class="form-group p-0 mb-3">
-                        <label class="fw-bold mb-1">Cronologia / Recorrência *</label>
-                        <select class="form-select" name="cronologia" required>
-                            <option value="Diário" selected>Diário (Rotina comum)</option>
-                            <option value="Semanal">Semanal</option>
-                            <option value="Quinzenal">Quinzenal</option>
-                            <option value="Mensal">Mensal</option>
-                            <option value="Bimestral">Bimestral</option>
-                            <option value="Trimestral">Trimestral</option>
-                            <option value="Quadrimestral">Quadrimestral</option>
-                            <option value="Semestral">Semestral</option>
-                            <option value="Anual">Anual</option>
-                        </select>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <div class="form-group p-0">
-                                <label class="fw-bold mb-1">Início</label>
-                                <input type="datetime-local" class="form-control" name="data_hora_inicio" id="adv_inicio" required>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="form-group p-0">
-                                <label class="fw-bold mb-1">Fim (Entrega)</label>
-                                <input type="datetime-local" class="form-control" name="data_hora_fim" id="adv_fim" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group p-0">
-                        <label class="mb-1 fw-bold">Observação (Opcional)</label>
-                        <textarea class="form-control" name="observacao" rows="2" placeholder="Descreva imprevistos ou detalhes..."></textarea>
-                    </div>
-                </div>
-                
-                <div class="modal-footer border-0 pt-0 pb-4 pe-4">
-                    <button type="button" class="btn btn-outline-secondary btn-round" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-secondary btn-round fw-bold px-4">
-                        <i class="fas fa-check me-2"></i> Registrar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    function abrirModalLancamento(id, titulo, meta) {
-        document.getElementById('input_atividade_id').value = id;
-        document.getElementById('display_atividade_titulo').innerText = titulo;
-        document.getElementById('display_meta').innerText = 'Meta Estimada: ' + meta;
-        
-        // Auto-preenchimento inteligente de hora atual
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('input_fim').value = now.toISOString().slice(0, 16);
-        
-        const past = new Date(now.getTime() - 30 * 60000); // Default: -30min
-        document.getElementById('input_inicio').value = past.toISOString().slice(0, 16);
-
-        var myModal = new bootstrap.Modal(document.getElementById('modalLancamento'));
-        myModal.show();
-    }
-
-    // Scripts do Lançamento Avulso (Busca Dinâmica AJAX)
-    function buscarAtividade(termo) {
-        const resultsDiv = document.getElementById('adv_results');
-        if(termo.length < 3) { 
-            resultsDiv.style.display = 'none'; 
-            return; 
-        }
-        
-        fetch("{{ url_for('api.buscar_atividades') }}?q=" + termo)
-            .then(res => res.json())
-            .then(data => {
-                let html = '';
-                if(data.length === 0) {
-                    html = '<div class="list-group-item text-muted">Nenhuma atividade encontrada...</div>';
-                } else {
-                    data.forEach(a => {
-                        html += `<a href="javascript:void(0)" class="list-group-item list-group-item-action" onclick="selecionarAtividade(${a.id}, '${a.titulo.replace(/'/g, "\\'")}')">
-                            <strong>${a.titulo}</strong><br>
-                            <small class="text-muted"><i class="fas fa-bullseye me-1"></i> Meta SLA: ${a.meta}</small>
-                        </a>`;
-                    });
-                }
-                resultsDiv.innerHTML = html;
-                resultsDiv.style.display = 'block';
-            }).catch(err => console.error(err));
-    }
-
-    function selecionarAtividade(id, titulo) {
-        document.getElementById('adv_atividade_id').value = id;
-        document.getElementById('adv_search').value = titulo;
-        document.getElementById('adv_results').style.display = 'none';
-    }
-
-    function prepararModalAvancado() {
-        document.getElementById('adv_search').value = '';
-        document.getElementById('adv_atividade_id').value = '';
-        document.getElementById('adv_results').style.display = 'none';
-
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('adv_fim').value = now.toISOString().slice(0, 16);
-        
-        const past = new Date(now.getTime() - 30 * 60000);
-        document.getElementById('adv_inicio').value = past.toISOString().slice(0, 16);
-    }
-</script>
-<style>
-    /* Suaviza o hover nos cards e adiciona sombra agradável */
-    .card-hover-effect:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
-        border-color: var(--primary-color) !important;
-    }
-</style>
 {% endblock %}

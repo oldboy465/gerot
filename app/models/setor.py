@@ -18,15 +18,11 @@ class Setor(db.Model):
     ativo = db.Column(db.Boolean, default=True)
 
     # --- 2. ESTRUTURA ORGANIZACIONAL (HIERARQUIA) ---
-    # Autorrelacionamento para Hierarquia (Pai/Filho)
     hierarquia_pai_id = db.Column(db.Integer, db.ForeignKey('setores.id'), nullable=True)
-    
-    # Vinculação com a Tabela de Usuários (Responsáveis)
-    # Nota: Usamos strings para evitar import circular com o modelo Usuario
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
-    substituto_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
-    
-    # Classificação do Setor
+
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', use_alter=True, name='fk_setor_responsavel'), nullable=True)
+    substituto_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', use_alter=True, name='fk_setor_substituto'), nullable=True)
+
     tipo_setor = db.Column(db.String(30)) # Operacional, Administrativo, Estratégico
     natureza_atuacao = db.Column(db.String(30)) # Direta (Logística) ou Apoio
 
@@ -39,42 +35,32 @@ class Setor(db.Model):
     # --- 4. PESSOAS E CAPACIDADE (GESTÃO DE RECURSOS) ---
     limite_max_colaboradores = db.Column(db.Integer, default=0) # 0 = sem limite definido
     cargos_permitidos = db.Column(db.Text) # Lista ou descrição dos cargos vinculados
-    
-    # Jornada e Turno
+
     turno_operacao = db.Column(db.String(50)) # Diurno, Noturno, 24h, Flexível
     escala_trabalho = db.Column(db.String(50)) # 5x2, 6x1, 12x36, etc.
 
     # --- RELACIONAMENTOS SQLALCHEMY ---
-    
-    # Sub-setores (Filhos)
     sub_setores = db.relationship(
-        'Setor', 
+        'Setor',
         backref=db.backref('pai', remote_side=[id]),
         lazy='dynamic'
     )
-    
-    # Usuários Alocados (Equipe)
-    # O backref 'setor_pertencente' permite acessar user.setor_pertencente
-    usuarios = db.relationship(
-        'Usuario', 
-        backref='setor_pertencente', 
-        lazy='dynamic', 
-        foreign_keys='Usuario.setor_id'
-    )
-    
-    # Atividades vinculadas ao Setor (Catálogo de Serviços)
-    atividades = db.relationship('AtividadePadrao', backref='setor_dono', lazy='dynamic')
-    
-    # Histórico de Lançamentos (Snapshot para BI)
-    lancamentos = db.relationship('Lancamento', backref='setor_snapshot', lazy='dynamic')
 
-    # --- MÉTODOS DE SUPORTE ---
+    usuarios = db.relationship(
+        'Usuario',
+        backref='setor_pertencente',
+        lazy='dynamic',
+        foreign_keys='Usuario.setor_id',
+        cascade='all, delete-orphan'
+    )
+
+    atividades = db.relationship('AtividadePadrao', backref='setor_dono', lazy='dynamic', cascade='all, delete-orphan')
+    lancamentos = db.relationship('Lancamento', backref='setor_snapshot', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Setor {self.sigla} - {self.nome}>'
 
     def to_dict(self):
-        """Converte o objeto para dicionário (Útil para APIs de BI e Dashboards)"""
         return {
             'id': self.id,
             'nome': self.nome,
@@ -90,16 +76,11 @@ class Setor(db.Model):
         }
 
     def get_caminho_hierarquico(self):
-        """
-        Retorna a árvore genealógica do setor.
-        Ex: "Diretoria Logística > Gerência de Transportes > Setor de Pátio"
-        """
         if self.pai:
             return f"{self.pai.get_caminho_hierarquico()} > {self.nome}"
         return self.nome
 
     def verificar_lotacao_critica(self):
-        """Retorna True se o setor atingiu o limite de pessoas (Planejamento de RH)"""
         if self.limite_max_colaboradores <= 0:
             return False
         return self.usuarios.count() >= self.limite_max_colaboradores

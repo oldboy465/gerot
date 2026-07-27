@@ -1,179 +1,223 @@
 {% extends "base.html" %}
-{% block content %}
 
-<div class="mx-auto max-w-4xl">
-    
-    <!-- HEADER -->
-    <div class="mb-6">
-        <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
-            Novo Setor
-        </h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-            Configuração da estrutura organizacional
-        </p>
+{% block title %}
+    {% if setor %}Editar Setor: {{ setor.nome }}{% else %}Cadastrar Novo Setor{% endif %} | GEROT
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+            <h1 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-sitemap text-blue-600"></i>
+                {% if setor %}
+                    Editar Estrutura do Setor: {{ setor.nome }} ({{ setor.sigla }})
+                {% else %}
+                    Cadastrar Novo Setor Organizacional
+                {% endif %}
+            </h1>
+            <p class="text-xs text-slate-500 mt-1">Configure os parâmetros operacionais e limites do setor.</p>
+        </div>
+        <a href="{{ url_for('admin.listar_setores') }}" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Voltar para Lista</span>
+        </a>
     </div>
 
-    <!-- FORM CARD -->
-    <div class="tailwind-card p-6 md:p-8">
-        <form method="POST" action="" class="space-y-8">
+    <!-- Form Form -->
+    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+        {% if setor %}
+            <form action="{{ url_for('admin.editar_setor', id=setor.id) }}" method="POST" class="space-y-6">
+        {% else %}
+            <form action="{{ url_for('admin.novo_setor') }}" method="POST" class="space-y-6">
+        {% endif %}
             
-            <!-- SEÇÃO 1: IDENTIFICAÇÃO -->
-            <div>
-                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
-                    <i class="fa-solid fa-building text-blue-600"></i>
-                    Identificação
-                </h4>
-
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    <div class="md:col-span-2">
-                        <label for="nome" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Nome do Setor <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="nome" name="nome" required
-                               class="form-input-tailwind"
-                               placeholder="Ex: Departamento Financeiro">
-                    </div>
-
-                    <div>
-                        <label for="sigla" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Sigla <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="sigla" name="sigla" required
-                               class="form-input-tailwind uppercase"
-                               placeholder="Ex: FIN">
-                    </div>
-
-                    <div>
-                        <label for="codigo_interno" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Cód. Interno
-                        </label>
-                        <input type="text" id="codigo_interno" name="codigo_interno"
-                               class="form-input-tailwind"
-                               placeholder="Ex: CC-102">
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Nome -->
+                <div class="md:col-span-2">
+                    <label for="nome" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Nome do Setor <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="nome" name="nome" value="{{ setor.nome if setor else '' }}" required placeholder="Ex: Logística e Distribuição" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">
                 </div>
+
+                <!-- Sigla -->
+                <div>
+                    <label for="sigla" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Sigla <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="sigla" name="sigla" value="{{ setor.sigla if setor else '' }}" required placeholder="Ex: LOG" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm uppercase outline-none transition">
+                </div>
+
+                <!-- Código Interno -->
+                <div>
+                    <label for="codigo_interno" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Código Interno <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="codigo_interno" name="codigo_interno" value="{{ setor.codigo_interno if setor else '' }}" required placeholder="Ex: SET-LOG" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm uppercase outline-none transition">
+                </div>
+
+                <!-- Gestor / Responsável -->
+                <div>
+                    <label for="responsavel_id" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Gestor / Responsável
+                    </label>
+                    <select id="responsavel_id" name="responsavel_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="">Selecione um responsável...</option>
+                        {% for usr in usuarios %}
+                            <option value="{{ usr.id }}" {% if setor and setor.responsavel_id == usr.id %}selected{% endif %}>
+                                {{ usr.nome_completo }} ({{ usr.cargo or usr.role }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Substituto Eventual -->
+                <div>
+                    <label for="substituto_id" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Substituto Eventual
+                    </label>
+                    <select id="substituto_id" name="substituto_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="">Selecione um substituto...</option>
+                        {% for usr in usuarios %}
+                            <option value="{{ usr.id }}" {% if setor and setor.substituto_id == usr.id %}selected{% endif %}>
+                                {{ usr.nome_completo }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Setor Superior -->
+                <div>
+                    <label for="hierarquia_pai_id" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Setor Superior (Hierarquia)
+                    </label>
+                    <select id="hierarquia_pai_id" name="hierarquia_pai_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="">Nenhum (Setor Raiz/Topo)</option>
+                        {% for sp in setores_pai %}
+                            <option value="{{ sp.id }}" {% if setor and setor.hierarquia_pai_id == sp.id %}selected{% endif %}>
+                                {{ sp.nome }} ({{ sp.sigla }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Tipo de Setor -->
+                <div>
+                    <label for="tipo_setor" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Tipo de Setor
+                    </label>
+                    <select id="tipo_setor" name="tipo_setor" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="Operacional" {% if setor and setor.tipo_setor == 'Operacional' %}selected{% endif %}>Operacional</option>
+                        <option value="Administrativo" {% if setor and setor.tipo_setor == 'Administrativo' %}selected{% endif %}>Administrativo</option>
+                        <option value="Estratégico" {% if setor and setor.tipo_setor == 'Estratégico' %}selected{% endif %}>Estratégico</option>
+                    </select>
+                </div>
+
+                <!-- Natureza de Atuação -->
+                <div>
+                    <label for="natureza_atuacao" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Natureza de Atuação
+                    </label>
+                    <select id="natureza_atuacao" name="natureza_atuacao" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="Direta" {% if setor and setor.natureza_atuacao == 'Direta' %}selected{% endif %}>Direta</option>
+                        <option value="Apoio" {% if setor and setor.natureza_atuacao == 'Apoio' %}selected{% endif %}>Apoio</option>
+                    </select>
+                </div>
+
+                <!-- Complexidade -->
+                <div>
+                    <label for="nivel_complexidade" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Nível de Complexidade
+                    </label>
+                    <select id="nivel_complexidade" name="nivel_complexidade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="Baixa" {% if setor and setor.nivel_complexidade == 'Baixa' %}selected{% endif %}>Baixa</option>
+                        <option value="Média" {% if setor and setor.nivel_complexidade == 'Média' %}selected{% endif %}>Média</option>
+                        <option value="Alta" {% if setor and setor.nivel_complexidade == 'Alta' %}selected{% endif %}>Alta</option>
+                    </select>
+                </div>
+
+                <!-- Repetitividade -->
+                <div>
+                    <label for="nivel_repetitividade" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Nível de Repetitividade
+                    </label>
+                    <select id="nivel_repetitividade" name="nivel_repetitividade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition bg-white">
+                        <option value="Baixa" {% if setor and setor.nivel_repetitividade == 'Baixa' %}selected{% endif %}>Baixa</option>
+                        <option value="Média" {% if setor and setor.nivel_repetitividade == 'Média' %}selected{% endif %}>Média</option>
+                        <option value="Alta" {% if setor and setor.nivel_repetitividade == 'Alta' %}selected{% endif %}>Alta</option>
+                    </select>
+                </div>
+
+                <!-- Limite Máximo de Colaboradores -->
+                <div>
+                    <label for="limite_max_colaboradores" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Limite de Colaboradores
+                    </label>
+                    <input type="number" id="limite_max_colaboradores" name="limite_max_colaboradores" value="{{ setor.limite_max_colaboradores if setor else 0 }}" min="0" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">
+                </div>
+
+                <!-- Turno de Operação -->
+                <div>
+                    <label for="turno_operacao" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Turno de Operação
+                    </label>
+                    <input type="text" id="turno_operacao" name="turno_operacao" value="{{ setor.turno_operacao if setor else 'Comercial' }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">
+                </div>
+
+                <!-- Escala de Trabalho -->
+                <div>
+                    <label for="escala_trabalho" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Escala de Trabalho
+                    </label>
+                    <input type="text" id="escala_trabalho" name="escala_trabalho" value="{{ setor.escala_trabalho if setor else '5x2' }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">
+                </div>
+
+                <!-- Cargos Permitidos -->
+                <div class="md:col-span-2">
+                    <label for="cargos_permitidos" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Cargos Permitidos / Mapeados
+                    </label>
+                    <input type="text" id="cargos_permitidos" name="cargos_permitidos" value="{{ setor.cargos_permitidos if setor else '' }}" placeholder="Ex: Analista, Assistente, Auxiliar" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">
+                </div>
+
+                <!-- Missão -->
+                <div class="md:col-span-3">
+                    <label for="missao_setor" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Missão do Setor
+                    </label>
+                    <textarea id="missao_setor" name="missao_setor" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">{{ setor.missao_setor if setor else '' }}</textarea>
+                </div>
+
+                <!-- Descrição Atividades -->
+                <div class="md:col-span-3">
+                    <label for="descricao_atividades" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Descrição das Atividades Principais
+                    </label>
+                    <textarea id="descricao_atividades" name="descricao_atividades" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm outline-none transition">{{ setor.descricao_atividades if setor else '' }}</textarea>
+                </div>
+
+                <!-- Checkbox Ativo -->
+                {% if setor %}
+                    <div class="md:col-span-3 flex items-center gap-3 pt-2">
+                        <input type="checkbox" id="ativo" name="ativo" value="1" {% if setor.ativo %}checked{% endif %} class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <label for="ativo" class="text-sm font-semibold text-slate-700">Setor Ativo no Sistema</label>
+                    </div>
+                {% endif %}
             </div>
 
-            <!-- SEÇÃO 2: HIERARQUIA -->
-            <div>
-                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
-                    <i class="fa-solid fa-sitemap text-blue-600"></i>
-                    Hierarquia
-                </h4>
-
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    <div>
-                        <label for="hierarquia_pai_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Setor Pai
-                        </label>
-                        <select id="hierarquia_pai_id" name="hierarquia_pai_id" class="form-input-tailwind">
-                            <option value="">-- Nível Raiz (Diretoria) --</option>
-                            {% for s in setores_pai %}
-                                <option value="{{ s.id }}">{{ s.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="tipo_setor" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Tipo
-                        </label>
-                        <select id="tipo_setor" name="tipo_setor" class="form-input-tailwind">
-                            <option value="Operacional">Operacional</option>
-                            <option value="Administrativo">Administrativo</option>
-                            <option value="Estratégico">Estratégico</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="natureza_atuacao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Natureza
-                        </label>
-                        <select id="natureza_atuacao" name="natureza_atuacao" class="form-input-tailwind">
-                            <option value="Direta">Direta</option>
-                            <option value="Apoio">Apoio</option>
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-3">
-                        <label for="responsavel_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Responsável
-                        </label>
-                        <select id="responsavel_id" name="responsavel_id" class="form-input-tailwind">
-                            <option value="">-- Selecione --</option>
-                            {% for u in usuarios %}
-                                <option value="{{ u.id }}">{{ u.nome_completo }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEÇÃO 3: OPERAÇÃO -->
-            <div>
-                <h4 class="text-base font-semibold text-slate-900 border-b border-slate-200 pb-2 mb-4 dark:text-white dark:border-slate-700 flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-blue-600"></i>
-                    Operação
-                </h4>
-
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    <div class="md:col-span-3">
-                        <label for="missao_setor" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Missão
-                        </label>
-                        <textarea id="missao_setor" name="missao_setor" rows="3"
-                                  class="form-input-tailwind"
-                                  placeholder="Descrição da missão e objetivo do setor..."></textarea>
-                    </div>
-
-                    <div>
-                        <label for="limite_max_colaboradores" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Capacidade Máx.
-                        </label>
-                        <input type="number" id="limite_max_colaboradores" name="limite_max_colaboradores"
-                               class="form-input-tailwind" value="0" min="0">
-                    </div>
-
-                    <div>
-                        <label for="turno_operacao" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Turno
-                        </label>
-                        <select id="turno_operacao" name="turno_operacao" class="form-input-tailwind">
-                            <option value="Comercial">Comercial</option>
-                            <option value="Turnos">Turnos</option>
-                            <option value="24h">24h</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="escala_trabalho" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Escala
-                        </label>
-                        <select id="escala_trabalho" name="escala_trabalho" class="form-input-tailwind">
-                            <option value="5x2">5x2</option>
-                            <option value="6x1">6x1</option>
-                            <option value="12x36">12x36</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BUTTONS -->
-            <div class="flex items-center justify-end gap-4 border-t border-slate-200 pt-6 dark:border-slate-700">
-                <a href="{{ url_for('admin.listar_setores') }}" 
-                   class="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition">
+            <!-- Submit buttons -->
+            <div class="flex items-center justify-end gap-4 pt-6 border-t border-slate-200">
+                <a href="{{ url_for('admin.listar_setores') }}" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
                     Cancelar
                 </a>
-                <button type="submit" 
-                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition shadow">
-                    <i class="fa-solid fa-plus"></i>
-                    Criar Setor
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition flex items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>{% if setor %}Salvar Alterações{% else %}Cadastrar Setor{% endif %}</span>
                 </button>
             </div>
-
         </form>
     </div>
-
 </div>
-
 {% endblock %}

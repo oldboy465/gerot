@@ -7,6 +7,7 @@ from datetime import datetime
 app = create_app(os.getenv('FLASK_ENV') or 'default')
 
 def setup_inicial():
+    """Configuração inicial e criação do usuário administrador raiz do sistema."""
     with app.app_context():
         db.create_all()
 
@@ -66,6 +67,7 @@ def setup_inicial():
                 db.session.commit()
         except Exception as e:
             db.session.rollback()
+            print(f">>> [AVISO] Erro ao vincular responsavel raiz: {e}")
 
 if __name__ == '__main__':
     setup_inicial()

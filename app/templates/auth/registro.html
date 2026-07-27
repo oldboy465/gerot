@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}Cadastro de Colaborador | GEROT{% endblock %}
 {% block content %}
 
 <div class="mx-auto max-w-5xl py-4">
@@ -14,7 +15,7 @@
     </div>
 
     <!-- MAIN FORM CARD -->
-    <div class="tailwind-card p-6 md:p-10">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 md:p-10">
         
         <div class="mb-8 border-b border-slate-200 pb-4 dark:border-slate-700 flex items-center justify-between">
             <div>
@@ -43,11 +44,11 @@
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     
                     <div class="sm:col-span-2">
-                        <label for="nome_completo" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                        <label for="nome" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Nome Completo <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="nome_completo" name="nome_completo" required
-                               class="form-input-tailwind"
+                        <input type="text" id="nome" name="nome" required
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="Digite seu nome completo">
                     </div>
 
@@ -56,14 +57,14 @@
                             Data de Nascimento <span class="text-rose-500">*</span>
                         </label>
                         <input type="date" id="data_nascimento" name="data_nascimento" required
-                               class="form-input-tailwind">
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
                     </div>
 
                     <div>
                         <label for="sexo" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Gênero
                         </label>
-                        <select id="sexo" name="sexo" class="form-input-tailwind">
+                        <select id="sexo" name="sexo" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
                             <option value="">Selecione...</option>
                             <option value="Masculino">Masculino</option>
                             <option value="Feminino">Feminino</option>
@@ -75,7 +76,7 @@
                         <label for="estado_civil" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Estado Civil
                         </label>
-                        <select id="estado_civil" name="estado_civil" class="form-input-tailwind">
+                        <select id="estado_civil" name="estado_civil" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
                             <option value="Solteiro(a)">Solteiro(a)</option>
                             <option value="Casado(a)">Casado(a)</option>
                             <option value="Outro">Outro</option>
@@ -86,8 +87,8 @@
                         <label for="cpf" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             CPF <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="cpf" name="cpf" required
-                               class="form-input-tailwind"
+                        <input type="text" id="cpf" name="cpf" required maxlength="14"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="000.000.000-00">
                     </div>
 
@@ -96,50 +97,26 @@
                             RG <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" id="rg_numero" name="rg_numero" required
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="000000000">
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label for="rg_orgao_emissor" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                            <label for="rg_orgao" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                                 Órgão Emissor
                             </label>
-                            <input type="text" id="rg_orgao_emissor" name="rg_orgao_emissor"
-                                   class="form-input-tailwind" placeholder="SSP">
+                            <input type="text" id="rg_orgao" name="rg_orgao"
+                                   class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white" placeholder="SSP">
                         </div>
                         <div>
                             <label for="rg_uf" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                                 UF
                             </label>
-                            <select id="rg_uf" name="rg_uf" class="form-input-tailwind">
-                                <option value="MA">MA</option>
-                                <option value="AC">AC</option>
-                                <option value="AL">AL</option>
-                                <option value="AP">AP</option>
-                                <option value="AM">AM</option>
-                                <option value="BA">BA</option>
-                                <option value="CE">CE</option>
-                                <option value="DF">DF</option>
-                                <option value="ES">ES</option>
-                                <option value="GO">GO</option>
-                                <option value="MT">MT</option>
-                                <option value="MS">MS</option>
-                                <option value="MG">MG</option>
-                                <option value="PA">PA</option>
-                                <option value="PB">PB</option>
-                                <option value="PR">PR</option>
-                                <option value="PE">PE</option>
-                                <option value="PI">PI</option>
-                                <option value="RJ">RJ</option>
-                                <option value="RN">RN</option>
-                                <option value="RS">RS</option>
-                                <option value="RO">RO</option>
-                                <option value="RR">RR</option>
-                                <option value="SC">SC</option>
-                                <option value="SP">SP</option>
-                                <option value="SE">SE</option>
-                                <option value="TO">TO</option>
+                            <select id="rg_uf" name="rg_uf" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
+                                {% for uf in ufs %}
+                                <option value="{{ uf }}" {% if uf == 'MA' %}selected{% endif %}>{{ uf }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
@@ -161,16 +138,16 @@
                             E-mail Corporativo <span class="text-rose-500">*</span>
                         </label>
                         <input type="email" id="email" name="email" required
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="nome@empresa.com.br">
                     </div>
 
                     <div class="sm:col-span-2">
-                        <label for="telefone_principal" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                        <label for="telefone" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Telefone/WhatsApp <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="telefone_principal" name="telefone_principal" required
-                               class="form-input-tailwind"
+                        <input type="text" id="telefone" name="telefone" required maxlength="15"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="(98) 90000-0000">
                     </div>
 
@@ -179,7 +156,7 @@
                             CEP <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" id="cep" name="cep" required
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="65000-000">
                         <span class="mt-1 block text-[10px] text-slate-400">
                             Digite o CEP para buscar.
@@ -191,7 +168,7 @@
                             Endereço <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" id="logradouro" name="logradouro" required
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="Rua, Avenida, Alameda...">
                     </div>
 
@@ -200,7 +177,7 @@
                             Número <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" id="numero_endereco" name="numero_endereco" required
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="123">
                     </div>
 
@@ -209,7 +186,7 @@
                             Bairro
                         </label>
                         <input type="text" id="bairro" name="bairro"
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="Bairro">
                     </div>
 
@@ -218,17 +195,19 @@
                             Cidade
                         </label>
                         <input type="text" id="cidade" name="cidade"
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="São Luís">
                     </div>
 
                     <div>
                         <label for="uf_endereco" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
-                            UF
+                            UF <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="uf_endereco" name="uf_endereco"
-                               class="form-input-tailwind"
-                               placeholder="MA">
+                        <select id="uf_endereco" name="uf_endereco" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
+                            {% for uf in ufs %}
+                            <option value="{{ uf }}" {% if uf == 'MA' %}selected{% endif %}>{{ uf }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                 </div>
@@ -247,7 +226,7 @@
                         <label for="setor_id" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Setor de Lotação <span class="text-rose-500">*</span>
                         </label>
-                        <select id="setor_id" name="setor_id" required class="form-input-tailwind">
+                        <select id="setor_id" name="setor_id" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
                             <option value="">Selecione...</option>
                             {% for setor in setores %}
                                 <option value="{{ setor.id }}">{{ setor.nome }}</option>
@@ -260,7 +239,7 @@
                             Matrícula
                         </label>
                         <input type="text" id="matricula" name="matricula"
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="0000">
                     </div>
 
@@ -269,7 +248,7 @@
                             Cargo <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" id="cargo" name="cargo" required
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="Ex: Assistente">
                     </div>
 
@@ -278,7 +257,7 @@
                             Função Real
                         </label>
                         <input type="text" id="funcao" name="funcao"
-                               class="form-input-tailwind"
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                                placeholder="Descrição sumária da função">
                     </div>
 
@@ -286,7 +265,7 @@
                         <label for="tipo_vinculo" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Vínculo
                         </label>
-                        <select id="tipo_vinculo" name="tipo_vinculo" class="form-input-tailwind">
+                        <select id="tipo_vinculo" name="tipo_vinculo" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
                             <option value="CLT">CLT</option>
                             <option value="Estágio">Estágio</option>
                             <option value="PJ">PJ</option>
@@ -299,7 +278,31 @@
                             Admissão <span class="text-rose-500">*</span>
                         </label>
                         <input type="date" id="data_admissao" name="data_admissao" required
-                               class="form-input-tailwind">
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="setores_secundarios" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                            Setores Secundários (Opcional para Coordenadores)
+                        </label>
+                        <select id="setores_secundarios" name="setores_secundarios" multiple class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white h-20">
+                            {% for setor in setores %}
+                            <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="text-[10px] text-slate-400 mt-1 block">Segure CTRL para selecionar múltiplos setores adicionais.</span>
+                    </div>
+
+                    <div>
+                        <label for="role" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
+                            Perfil de Acesso
+                        </label>
+                        <select id="role" name="role" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white">
+                            <option value="operador">Operador</option>
+                            <option value="coordenador">Coordenador</option>
+                            <option value="gestor">Gestor</option>
+                            <option value="admin">Administrador</option>
+                        </select>
                     </div>
 
                 </div>
@@ -318,18 +321,18 @@
                         <label for="password" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Senha <span class="text-rose-500">*</span>
                         </label>
-                        <input type="password" id="password" name="password" required
-                               class="form-input-tailwind"
-                               placeholder="••••••••">
+                        <input type="password" id="password" name="senha" value="123456" required
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
+                               placeholder="123456">
                     </div>
 
                     <div>
                         <label for="confirm_password" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                             Confirmar Senha <span class="text-rose-500">*</span>
                         </label>
-                        <input type="password" id="confirm_password" name="confirm_password" required
-                               class="form-input-tailwind"
-                               placeholder="••••••••">
+                        <input type="password" id="confirm_password" name="confirmacao_senha" value="123456" required
+                               class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
+                               placeholder="123456">
                     </div>
 
                 </div>
@@ -348,7 +351,7 @@
 
             <!-- BUTTONS -->
             <div class="flex items-center justify-end gap-4 border-t border-slate-200 pt-6 dark:border-slate-700">
-                <a href="{{ url_for('auth.login') }}" 
+                <a href="{{ url_for('admin.listar_usuarios') }}" 
                    class="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 transition">
                     Cancelar
                 </a>
@@ -367,4 +370,31 @@
 
 {% endblock %}
 {% block scripts %}
+<!-- Máscaras em JavaScript para CPF e Telefone -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cpfInput = document.getElementById('cpf');
+        if (cpfInput) {
+            cpfInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            });
+        }
+
+        const telInput = document.getElementById('telefone_principal');
+        if (telInput) {
+            telInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d{5})(\d{4})$/, '$1-$2');
+                e.target.value = value;
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -1,147 +1,115 @@
 {% extends "base.html" %}
+{% block title %}Gestão de Setores | GEROT{% endblock %}
 {% block content %}
-
-<div class="mx-auto max-w-7xl">
-
-    <!-- PAGE HEADER -->
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h3 class="text-2xl font-bold text-slate-800 dark:text-white">
-                Estrutura Organizacional
-            </h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-                Gerenciamento de departamentos e hierarquia corporativa
-            </p>
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">Gestão de Setores Organizacionais</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Estrutura de departamentos, centros de custo e exclusão em lote.</p>
         </div>
-
-        <div>
-            <a href="{{ url_for('admin.novo_setor') }}"
-               class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 shadow-sm">
-                <i class="fa-solid fa-plus"></i>
-                Novo Setor
-            </a>
-        </div>
+        <a href="{{ url_for('admin.novo_setor') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Novo Setor</span>
+        </a>
     </div>
 
-    <!-- DATA TABLE CARD -->
-    <div class="tailwind-card overflow-hidden">
-        <div class="border-b border-slate-100 px-6 py-4 dark:border-slate-800 flex items-center justify-between">
-            <h4 class="font-bold text-slate-800 dark:text-white">
-                Departamentos Cadastrados
-            </h4>
-            <span class="text-xs text-slate-500">
-                Total: {{ setores|length }}
-            </span>
-        </div>
+    <!-- Formulário para Exclusão em Lote de Setores -->
+    <form id="formLoteSetores" method="POST" action="{{ url_for('admin.excluir_massa_setores') }}">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
+            
+            {% if current_user.is_admin or current_user.is_gestor %}
+            <div class="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Ações em Lote Disponíveis:</span>
+                <button type="submit" onclick="return confirm('Deseja realmente excluir todos os setores selecionados?')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded font-semibold transition flex items-center space-x-1 shadow-sm">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Excluir Selecionados</span>
+                </button>
+            </div>
+            {% endif %}
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-                    <tr>
-                        <th scope="col" class="px-6 py-3.5">Nome do Setor</th>
-                        <th scope="col" class="px-6 py-3.5">Sigla / Código</th>
-                        <th scope="col" class="px-6 py-3.5">Hierarquia (Pai)</th>
-                        <th scope="col" class="px-6 py-3.5">Complexidade</th>
-                        <th scope="col" class="px-6 py-3.5">Equipe</th>
-                        <th scope="col" class="px-6 py-3.5 text-right">Ações</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    {% for setor in setores %}
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-800 dark:text-white">{{ setor.nome }}</span>
-                                <span class="text-xs text-slate-400">
-                                    {% if setor.responsavel_id %}
-                                        <span class="text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-user-check mr-1"></i>Resp. Definido</span>
-                                    {% else %}
-                                        <span class="text-amber-600 dark:text-amber-400"><i class="fa-solid fa-user-xmark mr-1"></i>Sem gestor</span>
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                {{ setor.sigla }}
-                            </span>
-                            {% if setor.codigo_interno %}
-                                <span class="text-xs text-slate-400 ml-1">({{ setor.codigo_interno }})</span>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 uppercase text-xs tracking-wider border-b border-slate-200 dark:border-slate-700">
+                            {% if current_user.is_admin or current_user.is_gestor %}
+                            <th class="p-3 text-center w-10">
+                                <input type="checkbox" id="selectAllSetores" onclick="toggleAllSetores(this)" class="rounded text-blue-600 focus:ring-blue-500">
+                            </th>
                             {% endif %}
-                        </td>
-                        <td class="px-6 py-4">
-                            {% if setor.pai %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
-                                    <i class="fa-solid fa-folder-tree text-slate-400"></i>
-                                    {{ setor.pai.sigla }} - {{ setor.pai.nome }}
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
-                                    <i class="fa-solid fa-crown text-blue-500"></i>
-                                    Raiz / Diretoria
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4">
-                            {% if setor.nivel_complexidade == 'Alta' %}
-                                <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
-                                    Alta
-                                </span>
-                            {% elif setor.nivel_complexidade == 'Média' %}
-                                <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                                    Média
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                                    Baixa
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">
-                            <span class="inline-flex items-center gap-1">
-                                <i class="fa-solid fa-users text-xs text-slate-400"></i>
-                                {{ setor.usuarios.count() }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
+                            <th class="p-3">Sigla</th>
+                            <th class="p-3">Nome do Setor</th>
+                            <th class="p-3">Código Interno</th>
+                            <th class="p-3">Lotação Max.</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        {% if setores %}
+                        {% for setor in setores %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition">
+                            {% if current_user.is_admin or current_user.is_gestor %}
+                            <td class="p-3 text-center">
                                 {% if setor.sigla != 'ROOT' %}
-                                    <a href="{{ url_for('admin.editar_setor', id=setor.id) }}" 
-                                       class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 transition" 
-                                       title="Editar Setor">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </a>
-                                {% else %}
-                                    <span class="text-xs text-slate-400 italic">Protegido</span>
+                                <input type="checkbox" name="setor_ids" value="{{ setor.id }}" class="setor-checkbox rounded text-blue-600 focus:ring-blue-500">
                                 {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                            <div class="flex flex-col items-center justify-center">
-                                <i class="fa-solid fa-sitemap text-3xl text-slate-300 mb-3"></i>
-                                <p class="text-sm font-medium">Nenhum setor cadastrado além do ROOT.</p>
-                                <p class="text-xs text-slate-400 mt-1">Clique em <strong class="text-slate-600 dark:text-slate-300">Novo Setor</strong> para expandir a estrutura da empresa.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            {% endif %}
+                            <td class="p-3 font-bold text-slate-800 dark:text-slate-100">{{ setor.sigla }}</td>
+                            <td class="p-3 text-slate-600 dark:text-slate-300">{{ setor.nome }}</td>
+                            <td class="p-3 text-slate-500 font-mono text-xs">{{ setor.codigo_interno or '-' }}</td>
+                            <td class="p-3 text-slate-600 dark:text-slate-300">{{ setor.limite_max_colaboradores }} colab.</td>
+                            <td class="p-3">
+                                {% if setor.ativo %}
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full text-xs font-semibold">Ativo</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 rounded-full text-xs font-semibold">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-right space-x-2">
+                                <a href="{{ url_for('admin.editar_setor', id=setor.id) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold text-xs">Editar</a>
+                                {% if setor.sigla != 'ROOT' %}
+                                <button type="submit" form="singleDeleteSetor_{{ setor.id }}" class="text-red-600 hover:text-red-800 text-xs font-semibold">Excluir</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="p-6 text-center text-slate-500">Nenhum setor cadastrado.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
         </div>
+    </form>
 
-        <!-- TABLE FOOTER -->
-        <div class="border-t border-slate-100 bg-slate-50/50 px-6 py-3 dark:border-slate-800 dark:bg-slate-800/30">
-            <p class="text-xs text-slate-500 dark:text-slate-400">
-                Total de departamentos mapeados na estrutura organizacional: <strong class="text-slate-700 dark:text-slate-200">{{ setores|length }}</strong>
-            </p>
-        </div>
+    <!-- Formulários individuais ocultos para exclusão unitária segura via POST -->
+    {% for setor in setores %}
+    {% if setor.sigla != 'ROOT' %}
+    <form id="singleDeleteSetor_{{ setor.id }}" method="POST" action="{{ url_for('admin.excluir_setor', id=setor.id) }}" style="display:none;" onsubmit="return confirm('Deseja excluir este setor?')"></form>
+    {% endif %}
+    {% endfor %}
+
+    <!-- Paginação -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="flex justify-center space-x-2">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.listar_setores', page=pagination.prev_num) }}" class="px-3 py-1 bg-white dark:bg-slate-800 border rounded text-sm">Anterior</a>
+        {% endif %}
+        <span class="px-3 py-1 text-sm text-slate-600 dark:text-slate-400">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.listar_setores', page=pagination.next_num) }}" class="px-3 py-1 bg-white dark:bg-slate-800 border rounded text-sm">Próxima</a>
+        {% endif %}
     </div>
-
+    {% endif %}
 </div>
 
-{% endblock %}
-{% block scripts %}
+<script>
+    function toggleAllSetores(source) {
+        checkboxes = document.querySelectorAll('.setor-checkbox');
+        checkboxes.forEach((cb) => { cb.checked = source.checked; });
+    }
+</script>
 {% endblock %}

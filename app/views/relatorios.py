@@ -1,111 +1,207 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response, send_file
 from flask_login import login_required, current_user
 from datetime import datetime
-from app.models.lancamento import Lancamento
-from app.models.usuario import Usuario
 from app.models.setor import Setor
+from app.models.usuario import Usuario
+from app.models.lancamento import Lancamento
 from app.models.atividade import AtividadePadrao
+from app.services.calculo_bi import CalculoBI
 from app.services.exportacao import ExportacaoService
+from app.services.exportacao_pptx import ExportacaoPPTXService
 
 relatorios_bp = Blueprint('relatorios', __name__)
 
-@relatorios_bp.before_request
+@relatorios_bp.route('/')
 @login_required
-def check_permission():
-    """Garante que operadores comuns não acessem os relatórios corporativos"""
-    if current_user.role not in ['admin', 'gestor', 'coordenador']:
-        flash('Acesso restrito. Área exclusiva para a gestão.', 'danger')
+def index():
+    """
+    Central de Relatórios de Produção com visualização e download de evidências.
+    Respeita estritamente o isolamento de setores autorizados para coordenadores.
+    """
+    if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
+        flash('Acesso restrito à gestão de relatórios.', 'warning')
         return redirect(url_for('operacao.painel'))
 
-@relatorios_bp.route('/gerador', methods=['GET', 'POST'])
-def gerador():
-    """
-    Interface e Motor de Geração de Relatórios.
-    Aplica filtros dinâmicos e exporta em Excel, PDF (View) ou WhatsApp.
-    """
-    # Cascata de Segurança para Popular os Filtros Dropdown
-    if current_user.is_admin or current_user.is_gestor:
-        setores = Setor.query.order_by(Setor.nome).all()
-        usuarios = Usuario.query.order_by(Usuario.nome_completo).all()
+    page = request.args.get('page', 1, type=int)
+    setor_id = request.args.get('setor_id', type=int)
+    usuario_id = request.args.get('usuario_id', type=int)
+    data_inicio_str = request.args.get('data_inicio')
+    data_fim_str = request.args.get('data_fim')
+    status_prazo = request.args.get('status_prazo')
+    export_action = request.args.get('export')
+
+    # Regra de Negócio de Setores para Coordenador
+    if current_user.is_coordenador and not current_user.is_gestor:
+        setores_permitidos_ids = current_user.todos_setores_ids
+        if setor_id and setor_id not in setores_permitidos_ids:
+            flash('Acesso negado a este setor nos relatórios.', 'danger')
+            return redirect(url_for('relatorios.index', setor_id=current_user.setor_id))
+
+    query = Lancamento.query.join(Usuario, Lancamento.usuario_id == Usuario.id)
+
+    if setor_id:
+        query = query.filter(Lancamento.setor_id == setor_id)
+    elif current_user.is_coordenador and not current_user.is_gestor:
+        query = query.filter(Lancamento.setor_id.in_(current_user.todos_setores_ids))
+
+    if usuario_id:
+        query = query.filter(Lancamento.usuario_id == usuario_id)
+
+    if data_inicio_str:
+        try:
+            dt_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d').date()
+            query = query.filter(Lancamento.data_programada >= dt_inicio)
+        except ValueError:
+            pass
+
+    if data_fim_str:
+        try:
+            dt_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+            query = query.filter(Lancamento.data_programada <= dt_fim)
+        except ValueError:
+            pass
+
+    if status_prazo == 'no_prazo':
+        query = query.filter(Lancamento.dentro_do_prazo == True)
+    elif status_prazo == 'atrasado':
+        query = query.filter(Lancamento.dentro_do_prazo == False)
+
+    query = query.order_by(Lancamento.data_hora_inicio.desc())
+
+    if export_action == 'excel':
+        return ExportacaoService.gerar_excel(query.all())
+    elif export_action == 'whatsapp':
+        periodo_str = f"{data_inicio_str or 'Início'} até {data_fim_str or 'Hoje'}"
+        setor_nome = Setor.query.get(setor_id).nome if setor_id else "Todos os Setores Autorizados"
+        usuario_nome = Usuario.query.get(usuario_id).nome_completo if usuario_id else "Todos"
+
+        texto_wa = ExportacaoService.gerar_texto_whatsapp(
+            query.all(), periodo_str, setor_nome, usuario_nome
+        )
+        return Response(texto_wa, mimetype='text/plain')
+
+    pagination = query.paginate(page=page, per_page=10, error_out=False)
+
+    if current_user.is_coordenador and not current_user.is_gestor:
+        setores = Setor.query.filter(Setor.id.in_(current_user.todos_setores_ids)).order_by(Setor.nome.asc()).all()
+        usuarios = Usuario.query.filter(Usuario.setor_id.in_(current_user.todos_setores_ids), Usuario.ativo==True).order_by(Usuario.nome_completo.asc()).all()
     else:
-        # Coordenador só vê sua equipe e seu setor
-        setores = Setor.query.filter_by(id=current_user.setor_id).all()
-        usuarios = Usuario.query.filter_by(setor_id=current_user.setor_id).order_by(Usuario.nome_completo).all()
+        setores = Setor.query.order_by(Setor.nome.asc()).all()
+        usuarios = Usuario.query.filter_by(ativo=True).order_by(Usuario.nome_completo.asc()).all()
 
-    # Variável para armazenar texto do WPP caso a ação seja essa
-    texto_wpp = None
+    return render_template(
+        'relatorios/index.html',
+        lancamentos=pagination.items,
+        pagination=pagination,
+        setores=setores,
+        usuarios=usuarios,
+        filtro_setor_id=setor_id,
+        filtro_usuario_id=usuario_id,
+        filtro_data_inicio=data_inicio_str or '',
+        filtro_data_fim=data_fim_str or '',
+        filtro_status_prazo=status_prazo or '',
+        CalculoBI=CalculoBI
+    )
 
-    if request.method == 'POST':
-        acao = request.form.get('acao') or request.form.get('exportar') # 'excel', 'impressao', ou 'whatsapp'
+@relatorios_bp.route('/gerar-pptx', methods=['GET'])
+@login_required
+def gerar_pptx():
+    """
+    Função exclusiva para coordenadores, gestores e administradores gerarem
+    relatórios em PowerPoint (.pptx) vinculados aos filtros aplicados, respeitando setores permitidos.
+    """
+    if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
+        flash('Acesso restrito para geração de relatórios executivos em PowerPoint.', 'danger')
+        return redirect(url_for('operacao.painel'))
 
-        data_inicio = request.form.get('data_inicio')
-        data_fim = request.form.get('data_fim')
-        setor_id = request.form.get('setor_id')
-        usuario_id = request.form.get('usuario_id')
+    setor_id = request.args.get('setor_id', type=int)
+    data_inicio_str = request.args.get('data_inicio')
+    data_fim_str = request.args.get('data_fim')
+    status_prazo = request.args.get('status_prazo')
 
-        query = Lancamento.query
+    if current_user.is_coordenador and not current_user.is_gestor:
+        setores_permitidos_ids = current_user.todos_setores_ids
+        if setor_id and setor_id not in setores_permitidos_ids:
+            flash('Acesso negado para gerar PowerPoint deste setor.', 'danger')
+            return redirect(url_for('relatorios.index'))
 
-        # Trava de Segurança Final: Coordenador não pode burlar o HTML para buscar outro setor
-        if not (current_user.is_admin or current_user.is_gestor):
-            query = query.filter(Lancamento.setor_id == current_user.setor_id)
-        elif setor_id:
-            query = query.filter(Lancamento.setor_id == setor_id)
+    query = Lancamento.query.join(Usuario, Lancamento.usuario_id == Usuario.id)
 
-        # Filtros Dinâmicos de Data
-        periodo_str = "Todo o período"
-        if data_inicio:
-            try:
-                dt_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
-                query = query.filter(Lancamento.data_hora_inicio >= dt_inicio)
-                periodo_str = f"A partir de {dt_inicio.strftime('%d/%m/%Y')}"
-            except ValueError:
-                pass
+    if setor_id:
+        query = query.filter(Lancamento.setor_id == setor_id)
+    elif current_user.is_coordenador and not current_user.is_gestor:
+        query = query.filter(Lancamento.setor_id.in_(current_user.todos_setores_ids))
 
-        if data_fim:
-            try:
-                dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
-                dt_fim = dt_fim.replace(hour=23, minute=59, second=59) # Cobre o dia inteiro
-                query = query.filter(Lancamento.data_hora_fim <= dt_fim)
-                periodo_str = f"De {data_inicio} até {dt_fim.strftime('%d/%m/%Y')}" if data_inicio else f"Até {dt_fim.strftime('%d/%m/%Y')}"
-            except ValueError:
-                pass
+    if data_inicio_str:
+        try:
+            dt_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d').date()
+            query = query.filter(Lancamento.data_programada >= dt_inicio)
+        except ValueError:
+            pass
 
-        # Filtro de Usuário
-        if usuario_id:
-            query = query.filter(Lancamento.usuario_id == usuario_id)
+    if data_fim_str:
+        try:
+            dt_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+            query = query.filter(Lancamento.data_programada <= dt_fim)
+        except ValueError:
+            pass
 
-        lancamentos = query.order_by(Lancamento.data_hora_inicio.desc()).all()
+    if status_prazo == 'no_prazo':
+        query = query.filter(Lancamento.dentro_do_prazo == True)
+    elif status_prazo == 'atrasado':
+        query = query.filter(Lancamento.dentro_do_prazo == False)
 
-        if not lancamentos:
-            flash('Nenhum dado de produção encontrado para os filtros selecionados.', 'warning')
-            return redirect(url_for('relatorios.gerador'))
+    lancamentos = query.all()
 
-        # --- ROTAS DE EXPORTAÇÃO BASEADA NA AÇÃO ---
+    total_minutos = sum(l.duracao_minutos for l in lancamentos)
+    total_horas = round(total_minutos / 60, 1)
+    eficiencias = [l.eficiencia_percentual for l in lancamentos if l.eficiencia_percentual is not None]
+    media_eficiencia = round(sum(eficiencias) / len(eficiencias), 2) if eficiencias else 0.0
 
-        if acao == 'excel':
-            return ExportacaoService.gerar_excel(lancamentos)
+    if setor_id:
+        total_usuarios = Usuario.query.filter_by(setor_id=setor_id).count()
+    elif current_user.is_coordenador and not current_user.is_gestor:
+        total_usuarios = Usuario.query.filter(Usuario.setor_id.in_(current_user.todos_setores_ids)).count()
+    else:
+        total_usuarios = Usuario.query.count()
 
-        elif acao in ['pdf', 'impressao']:
-            # Renderiza um HTML limpo para impressão (Geração de PDF nativa do navegador)
-            return render_template('gestao/relatorio_impressao.html', 
-                                   lancamentos=lancamentos, 
-                                   periodo=periodo_str,
-                                   now=datetime.utcnow().strftime('%d/%m/%Y %H:%M'))
+    total_atividades = AtividadePadrao.query.count()
 
-        elif acao == 'whatsapp':
-            setor_obj = Setor.query.get(setor_id) if setor_id else None
-            setor_nome = setor_obj.nome if setor_obj else "Todos"
+    kpis = {
+        'horas': CalculoBI.formatar_numero_br(total_horas, 1) + "h",
+        'eficiencia': CalculoBI.formatar_porcentagem_br(media_eficiencia, 2),
+        'usuarios': CalculoBI.formatar_numero_br(total_usuarios, 0),
+        'rotinas': CalculoBI.formatar_numero_br(total_atividades, 0)
+    }
 
-            user_obj = Usuario.query.get(usuario_id) if usuario_id else None
-            usuario_nome = user_obj.nome_completo if user_obj else "Todos"
+    atividades_query = AtividadePadrao.query
+    if setor_id:
+        atividades_query = atividades_query.filter_by(setor_id=setor_id)
+    elif current_user.is_coordenador and not current_user.is_gestor:
+        atividades_query = atividades_query.filter(AtividadePadrao.setor_id.in_(current_user.todos_setores_ids))
 
-            texto_wpp = ExportacaoService.gerar_texto_whatsapp(lancamentos, periodo_str, setor_nome, usuario_nome)
+    atividades_totais = atividades_query.all()
+    status_counts = {
+        'Concluído': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Concluído'),
+        'Em Andamento': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Em Andamento'),
+        'Cancelado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Cancelado')
+    }
 
-    return render_template('gestao/relatorios.html', setores=setores, usuarios=usuarios, texto_wpp=texto_wpp)
+    setor_nome = Setor.query.get(setor_id).nome if setor_id else "Visão Consolidada de Setores Autorizados"
+    emissor_nome = current_user.nome_completo
 
-@relatorios_bp.route('/ficha/<int:id>')
-def ficha_tecnica(id):
-    """Renderiza a Ficha Técnica / Procedimento Operacional Padrão (POP)"""
-    atividade = AtividadePadrao.query.get_or_404(id)
-    now_date = datetime.utcnow().strftime('%d/%m/%Y %H:%M')
-    return render_template('relatorios/ficha_padrao.html', atividade=atividade, now_date=now_date)
+    ppt_stream = ExportacaoPPTXService.gerar_apresentacao_completa(
+        emissor_nome=emissor_nome,
+        kpis=kpis,
+        lancamentos=lancamentos,
+        status_counts=status_counts,
+        setor_nome=setor_nome
+    )
+
+    filename = f"gerot_relatorio_executivo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+    return send_file(
+        ppt_stream,
+        mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        as_attachment=True,
+        download_name=filename
+    )

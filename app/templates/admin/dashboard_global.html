@@ -1,170 +1,253 @@
 {% extends "base.html" %}
+
+{% block title %}Dashboard Executivo | GEROT{% endblock %}
+
 {% block content %}
+<div class="space-y-6">
+    <!-- Filtros de Pesquisa -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <form method="GET" action="{{ url_for('gestao.dashboard') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+            <div>
+                <label for="setor_id" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Filtrar por Setor</label>
+                <select id="setor_id" name="setor_id" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-xs outline-none bg-white">
+                    <option value="">Todos os Setores</option>
+                    {% for s in setores %}
+                        <option value="{{ s.id }}" {% if filtro_setor_id == s.id %}selected{% endif %}>{{ s.sigla }} - {{ s.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-<div class="mx-auto max-w-7xl">
-    
-    <!-- PAGE HEADER -->
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">
-                Visão Global
+            <div>
+                <label for="data_inicio" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Data Início</label>
+                <input type="date" id="data_inicio" name="data_inicio" value="{{ filtro_data_inicio }}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-xs outline-none">
+            </div>
+
+            <div>
+                <label for="data_fim" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Data Fim</label>
+                <input type="date" id="data_fim" name="data_fim" value="{{ filtro_data_fim }}" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-xs outline-none">
+            </div>
+
+            <div>
+                <label for="status_prazo" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Status SLA</label>
+                <select id="status_prazo" name="status_prazo" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 text-xs outline-none bg-white">
+                    <option value="">Todos</option>
+                    <option value="no_prazo" {% if filtro_status_prazo == 'no_prazo' %}selected{% endif %}>No Prazo</option>
+                    <option value="atrasado" {% if filtro_status_prazo == 'atrasado' %}selected{% endif %}>Atrasado</option>
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="w-full px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Aplicar Filtros</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Card 1: Horas -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Horas Produzidas</p>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">{{ kpis.horas }}h</h3>
+            </div>
+        </div>
+
+        <!-- Card 2: Eficiencia -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Eficiência Média</p>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">{{ kpis.eficiencia }}</h3>
+            </div>
+        </div>
+
+        <!-- Card 3: Colaboradores -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Colaboradores</p>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">{{ kpis.usuarios }}</h3>
+            </div>
+        </div>
+
+        <!-- Card 4: Setores -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-sitemap"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Setores Ativos</p>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">{{ kpis.setores }}</h3>
+            </div>
+        </div>
+
+        <!-- Card 5: Rotinas -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+                <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Atividades Base</p>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-0.5">{{ kpis.rotinas }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Dinâmicos -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Gráfico Linha: Eficiência Mensal -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-chart-area text-blue-600"></i>
+                <span>Eficiência Mensal Global (%)</span>
             </h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-                Painel de Controle Administrativo (Super-Admin)
-            </p>
+            <div class="h-64">
+                <canvas id="chartEficienciaMensal"></canvas>
+            </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-            <a href="{{ url_for('admin.listar_usuarios') }}" 
-               class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 shadow-sm">
-                <i class="fa-solid fa-users-gear text-slate-400"></i>
-                Gerenciar Acessos
-            </a>
-            <a href="{{ url_for('admin.listar_setores') }}" 
-               class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 shadow-sm">
-                <i class="fa-solid fa-sitemap text-blue-200"></i>
-                Estrutura
-            </a>
+        <!-- Gráfico Pizza: Pessoas por Setor -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-purple-600"></i>
+                <span>Pessoas por Setor</span>
+            </h2>
+            <div class="h-64 flex items-center justify-center">
+                <canvas id="chartPessoasSetor"></canvas>
+            </div>
         </div>
     </div>
 
-    <!-- KPI METRICS GRID -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-8">
-        
-        <!-- CARD 1: HORAS PRODUZIDAS -->
-        <div class="tailwind-card kpi-border-primary p-5 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Horas Produzidas
-                </span>
-                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                    {{ kpis.horas }}h
-                </h4>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
-                <i class="fa-solid fa-business-time text-xl"></i>
-            </div>
+    <!-- Ranking de Produção -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-trophy text-amber-500"></i>
+                <span>Ranking de Volume de Produção por Setor</span>
+            </h2>
         </div>
 
-        <!-- CARD 2: EFICIÊNCIA MÉDIA -->
-        <div class="tailwind-card kpi-border-success p-5 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Eficiência Média
-                </span>
-                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                    {{ kpis.eficiencia }}%
-                </h4>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-slate-800 dark:text-emerald-400">
-                <i class="fa-solid fa-chart-line text-xl"></i>
-            </div>
-        </div>
-
-        <!-- CARD 3: BASE DE USUÁRIOS -->
-        <div class="tailwind-card kpi-border-info p-5 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Base de Usuários
-                </span>
-                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                    {{ kpis.usuarios }}
-                </h4>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:bg-slate-800 dark:text-sky-400">
-                <i class="fa-solid fa-users text-xl"></i>
-            </div>
-        </div>
-
-        <!-- CARD 4: SETORES ATIVOS -->
-        <div class="tailwind-card kpi-border-warning p-5 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Setores Ativos
-                </span>
-                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                    {{ kpis.setores }}
-                </h4>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-slate-800 dark:text-amber-400">
-                <i class="fa-solid fa-building text-xl"></i>
-            </div>
-        </div>
-
-        <!-- CARD 5: ROTINAS CADASTRADAS -->
-        <div class="tailwind-card kpi-border-danger p-5 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Rotinas Cadastradas
-                </span>
-                <h4 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                    {{ kpis.rotinas }}
-                </h4>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-slate-800 dark:text-rose-400">
-                <i class="fa-solid fa-list-check text-xl"></i>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- RANKING SECTION -->
-    <div class="tailwind-card p-6">
-        <div class="mb-6 flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-            <div>
-                <h4 class="text-lg font-bold text-slate-800 dark:text-white">
-                    Ranking de Produção (Top 5 Setores)
-                </h4>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                    Distribuição do tempo total trabalhado por setor
-                </p>
-            </div>
-            <span class="rounded bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:bg-slate-800 dark:text-blue-400">
-                BI / Analytics
-            </span>
-        </div>
-
-        {% if ranking %}
-            <div class="space-y-5">
-                {% for item in ranking %}
-                    {% if kpis.horas > 0 %}
-                        {% set percent = (item.total_min / (kpis.horas * 60)) * 100 %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="px-6 py-3.5">Posição</th>
+                        <th class="px-6 py-3.5">Setor</th>
+                        <th class="px-6 py-3.5">Total em Minutos</th>
+                        <th class="px-6 py-3.5">Total em Horas</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 text-sm text-slate-700">
+                    {% if ranking %}
+                        {% for r in ranking %}
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="px-6 py-4 font-extrabold text-slate-800">{{ loop.index }}º</td>
+                                <td class="px-6 py-4 font-bold text-blue-600">{{ r.sigla }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-700">{{ CalculoBI.formatar_numero_br(r.total_min, 0) }} min</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        {{ CalculoBI.formatar_numero_br(r.total_min / 60, 1) }} hrs
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
                     {% else %}
-                        {% set percent = 0 %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-slate-400 text-sm">
+                                Nenhum dado de produção registrado para gerar o ranking.
+                            </td>
+                        </tr>
                     {% endif %}
-                    {% set width_value = percent|default(0)|round|string ~ '%' %}
-
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                    {{ loop.index }}
-                                </span>
-                                {{ item.sigla }}
-                            </span>
-                            <span class="font-medium text-slate-500 dark:text-slate-400">
-                                {{ item.total_min }} minutos
-                            </span>
-                        </div>
-                        <div class="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                            <div class="h-full bg-blue-600 rounded-full transition-all duration-500" 
-                                 style="width: {{ width_value }}"></div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="flex flex-col items-center justify-center py-12 text-center">
-                <div class="mb-3 rounded-full bg-slate-100 p-4 text-slate-400 dark:bg-slate-800">
-                    <i class="fa-solid fa-inbox text-2xl"></i>
-                </div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Aguardando dados de produção...
-                </p>
-            </div>
-        {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
-
 </div>
+{% endblock %}
 
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function formatarNumeroBR(val) {
+        if (val === null || val === undefined) return '0,0';
+        return val.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+    }
+
+    // Chart 1: Eficiência Mensal
+    const ctxEficiencia = document.getElementById('chartEficienciaMensal').getContext('2d');
+    new Chart(ctxEficiencia, {
+        type: 'line',
+        data: {
+            labels: {{ chart_eficiencia.labels | tojson if chart_eficiencia else ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"] | tojson }},
+            datasets: [{
+                label: 'Eficiência Média (%)',
+                data: {{ chart_eficiencia.data | tojson if chart_eficiencia else [0,0,0,0,0,0,0,0,0,0,0,0] | tojson }},
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 5,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' Eficiência: ' + formatarNumeroBR(ctx.parsed.y) + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(v) { return formatarNumeroBR(v) + '%'; }
+                    }
+                }
+            }
+        }
+    });
+
+    // Chart 2: Pessoas por Setor
+    const ctxPessoas = document.getElementById('chartPessoasSetor').getContext('2d');
+    new Chart(ctxPessoas, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_pessoas.labels | tojson if chart_pessoas else [] | tojson }},
+            datasets: [{
+                data: {{ chart_pessoas.data | tojson if chart_pessoas else [] | tojson }},
+                backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' ' + ctx.label + ': ' + ctx.parsed + ' colaborador(es)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
