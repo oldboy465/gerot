@@ -56,8 +56,8 @@ def login():
 @login_required
 def registrar():
     """
-    Solicitação de Cadastro Completo com validação server-side de CPF e Telefone,
-    além de suporte a múltiplos setores e lista completa de UFs.
+    Solicitação de Cadastro Completo com sanitização automática de Telefone,
+    suporte a múltiplos setores e lista completa de UFs.
     """
     if current_user.is_operador:
         flash('Acesso negado. Apenas administradores, gestores ou coordenadores podem realizar cadastros.', 'danger')
@@ -72,20 +72,19 @@ def registrar():
         nome = request.form.get('nome', '').upper().strip()
         email = request.form.get('email', '').lower().strip()
         cpf = request.form.get('cpf', '').strip()
-        telefone = request.form.get('telefone', '').strip()
+        telefone_raw = request.form.get('telefone', '').strip()
+        telefone = Usuario.sanitizar_telefone(telefone_raw)
         senha = request.form.get('senha', '')
         confirmacao = request.form.get('confirmacao_senha', '')
         setor_id = request.form.get('setor_id')
 
-        # --- VALIDAÇÃO SERVER-SIDE DE FORMATO (CPF E TELEFONE) ---
         padrao_cpf = r'^\d{3}\.\d{3}\.\d{3}-\d{2}$'
         if not re.match(padrao_cpf, cpf):
             flash('Formato de CPF inválido. Utilize o formato 000.000.000-00.', 'danger')
             return redirect(url_for('auth.registrar'))
 
-        padrao_tel = r'^\(\d{2}\)\s\d{4,5}-\d{4}$'
-        if not re.match(padrao_tel, telefone):
-            flash('Formato de telefone/WhatsApp inválido. Utilize o formato (00) 00000-0000.', 'danger')
+        if not telefone or len(re.sub(r'\D', '', telefone_raw)) < 8:
+            flash('Informe um número de telefone válido com pelo menos 8 dígitos.', 'danger')
             return redirect(url_for('auth.registrar'))
 
         rg_numero = request.form.get('rg_numero')
@@ -176,7 +175,6 @@ def registrar():
         else:
             novo_user.set_password('123456')
 
-        # Vínculo de múltiplos setores se for coordenador
         setores_sec_ids = request.form.getlist('setores_secundarios')
         for sid in setores_sec_ids:
             s_obj = Setor.query.get(int(sid))

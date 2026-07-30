@@ -2,6 +2,7 @@ from app import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import re
 
 usuario_setores_secundarios = db.Table(
     'usuario_setores_secundarios',
@@ -72,6 +73,18 @@ class Usuario(UserMixin, db.Model):
     lancamentos = db.relationship('Lancamento', backref='autor', lazy='dynamic', foreign_keys='Lancamento.usuario_id')
 
     correcoes_aprovadas = db.relationship('Lancamento', backref='aprovador', lazy='dynamic', foreign_keys='Lancamento.correcao_aprovada_por')
+
+    @staticmethod
+    def sanitizar_telefone(telefone_raw):
+        """Remove caracteres não numéricos e formata amigavelmente o telefone."""
+        if not telefone_raw:
+            return ""
+        digits = re.sub(r'\D', '', str(telefone_raw))
+        if len(digits) == 11:
+            return f"({digits[:2]}) {digits[2:7]}-{digits[7:]}"
+        elif len(digits) == 10:
+            return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
+        return digits or str(telefone_raw)
 
     def set_password(self, password):
         """Cria o hash seguro da senha."""

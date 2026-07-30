@@ -201,6 +201,11 @@ def editar_usuario(id):
         try:
             usuario.nome_completo = request.form.get('nome') or request.form.get('nome_completo')
             usuario.email = request.form.get('email')
+            
+            tel_input = request.form.get('telefone') or request.form.get('telefone_principal')
+            if tel_input:
+                usuario.telefone_principal = Usuario.sanitizar_telefone(tel_input)
+
             usuario.cargo = request.form.get('cargo')
             usuario.setor_id = request.form.get('setor_id')
             usuario.role = request.form.get('role')
