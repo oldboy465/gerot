@@ -11,42 +11,33 @@ class Lancamento(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # --- Rastreabilidade (Quem e Onde) ---
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     setor_id = db.Column(db.Integer, db.ForeignKey('setores.id'), nullable=False)
 
-    # --- O Que Foi Feito ---
     atividade_id = db.Column(db.Integer, db.ForeignKey('atividades_padrao.id'), nullable=False)
     tarefa_id = db.Column(db.Integer, db.ForeignKey('tarefas_padrao.id'), nullable=True)
 
-    # --- Motor de Tempo (Realizado) ---
     data_hora_inicio = db.Column(db.DateTime, nullable=False)
     data_hora_fim = db.Column(db.DateTime, nullable=False)
 
     duracao_minutos = db.Column(db.Integer, nullable=False, default=0)
 
-    # --- Dados de Volume (Opcional) ---
     valor_absoluto = db.Column(db.Float, default=0.0)
     unidade_medida_valor = db.Column(db.String(50))
 
-    # --- Indicadores de Performance ---
     eficiencia_percentual = db.Column(db.Float, default=0.0)
     dentro_do_prazo = db.Column(db.Boolean, default=True)
 
-    # --- Auditoria, Qualidade e Evidências ---
     justificativa = db.Column(db.Text)
     observacoes = db.Column(db.Text)
 
-    # Campos para Upload de Arquivo de Comprovação/Evidência (PDF, PNG, JPEG até 5MB)
     arquivo_evidencia = db.Column(db.String(255), nullable=True)
     nome_original_arquivo = db.Column(db.String(255), nullable=True)
 
-    # Workflow de Correção
     correcao_solicitada = db.Column(db.Boolean, default=False)
     correcao_aprovada_por = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     data_registro = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Data de Competência
     data_programada = db.Column(db.Date, default=datetime.utcnow)
 
     def calcular_duracao(self):

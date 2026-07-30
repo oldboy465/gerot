@@ -3,7 +3,6 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
-# Tabela de associação para permitir que Coordenadores tenham acesso a múltiplos setores
 usuario_setores_secundarios = db.Table(
     'usuario_setores_secundarios',
     db.Column('usuario_id', db.Integer, db.ForeignKey('usuarios.id', ondelete='CASCADE'), primary_key=True),
@@ -17,19 +16,15 @@ class Usuario(UserMixin, db.Model):
     """
     __tablename__ = 'usuarios'
 
-    # --- 0. Identificadores de Sistema ---
     id = db.Column(db.Integer, primary_key=True)
 
-    # Credenciais de Acesso (Login)
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256))
 
-    # Controle de Acesso (RBAC)
-    role = db.Column(db.String(20), default='operador', nullable=False) # admin, gestor, coordenador, operador
-    ativo = db.Column(db.Boolean, default=False) # Situação: Ativo/Inativo (Afastado/Desligado)
+    role = db.Column(db.String(20), default='operador', nullable=False)
+    ativo = db.Column(db.Boolean, default=False)
 
-    # --- 1. Identificação Básica ---
     nome_completo = db.Column(db.String(150), nullable=False)
     cpf = db.Column(db.String(14), unique=True, nullable=False)
 
@@ -38,58 +33,45 @@ class Usuario(UserMixin, db.Model):
     rg_uf = db.Column(db.String(2))
 
     data_nascimento = db.Column(db.Date)
-    sexo = db.Column(db.String(20)) # Ex: Masculino, Feminino, Outro
-    estado_civil = db.Column(db.String(20)) # Solteiro, Casado, etc.
+    sexo = db.Column(db.String(20))
+    estado_civil = db.Column(db.String(20))
 
-    # --- 2. Dados de Contato e Endereço ---
-    telefone_principal = db.Column(db.String(20)) # Celular/Whatsapp
+    telefone_principal = db.Column(db.String(20))
 
-    logradouro = db.Column(db.String(150)) # Rua, Av.
+    logradouro = db.Column(db.String(150))
     numero_endereco = db.Column(db.String(20))
     bairro = db.Column(db.String(100))
     cidade = db.Column(db.String(100))
     uf_endereco = db.Column(db.String(2))
     cep = db.Column(db.String(10))
 
-    # --- 3. Dados Trabalhistas (RH) ---
     matricula = db.Column(db.String(50), unique=True, nullable=True)
-    cargo = db.Column(db.String(100)) # Ex: Analista
-    funcao = db.Column(db.String(100)) # Ex: Desenvolver Software (O que faz na prática)
+    cargo = db.Column(db.String(100))
+    funcao = db.Column(db.String(100))
 
-    # Vinculação Hierárquica Principal
     setor_id = db.Column(db.Integer, db.ForeignKey('setores.id'), nullable=False)
 
-    # Vinculação Secundária (Permite que coordenadores atuem em múltiplos setores)
     setores_secundarios = db.relationship(
         'Setor',
         secondary=usuario_setores_secundarios,
         backref=db.backref('coordenadores_secundarios', lazy='dynamic')
     )
 
-    tipo_vinculo = db.Column(db.String(50)) # CLT, Estágio, Terceirizado, PJ
+    tipo_vinculo = db.Column(db.String(50))
     data_admissao = db.Column(db.Date)
 
-    # --- 4. Auditoria do Cadastro ---
     data_cadastro = db.Column(db.DateTime, default=datetime.utcnow)
     ultimo_login = db.Column(db.DateTime)
 
-    status_cadastro = db.Column(db.String(20), default='incompleto') # completo/incompleto
+    status_cadastro = db.Column(db.String(20), default='incompleto')
 
-    # Quem cadastrou este usuário? (Auto-relacionamento)
     cadastrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
 
-    # --- Relacionamentos ---
-
-    # Quem cadastrou este usuário (o objeto Usuario pai)
     cadastrador = db.relationship('Usuario', remote_side=[id], backref='usuarios_cadastrados')
 
-    # Execuções realizadas por este usuário
     lancamentos = db.relationship('Lancamento', backref='autor', lazy='dynamic', foreign_keys='Lancamento.usuario_id')
 
-    # Correções aprovadas por este usuário (se for coordenador)
     correcoes_aprovadas = db.relationship('Lancamento', backref='aprovador', lazy='dynamic', foreign_keys='Lancamento.correcao_aprovada_por')
-
-    # --- Métodos ---
 
     def set_password(self, password):
         """Cria o hash seguro da senha."""
@@ -123,7 +105,6 @@ class Usuario(UserMixin, db.Model):
                 ids.append(s.id)
         return ids
 
-    # Helpers de Permissão
     @property
     def is_admin(self):
         return self.role == 'admin'
@@ -139,6 +120,24 @@ class Usuario(UserMixin, db.Model):
     @property
     def is_operador(self):
         return self.role == 'operador'
+
+    def pode_gerenciar_setor(self, target_setor_id):
+        """Valida se o usuário tem permissão para gerenciar rotinas do setor especificado."""
+        if self.is_gestor:
+            return True
+        if self.is_coordenador and target_setor_id in self.todos_setores_ids:
+            return True
+        return False
+
+    def pode_deletar_lancamento(self, lancamento_obj):
+        """Operador não pode deletar nada. Coordenador só deleta do seu setor. Gestor deleta tudo."""
+        if self.is_operador:
+            return False
+        if self.is_gestor:
+            return True
+        if self.is_coordenador and lancamento_obj.setor_id in self.todos_setores_ids:
+            return True
+        return False
 
     def __repr__(self):
         return f'<Usuario {self.username} - {self.cargo}>'

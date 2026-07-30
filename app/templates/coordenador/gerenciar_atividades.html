@@ -3,7 +3,7 @@
 {% block title %}Engenharia de Rotinas | GEROT{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="{ modalNovaAtividade: false, modalTarefa: false, atvAtivaId: null, atvAtivaTitulo: '' }">
+<div class="space-y-6" x-data="{ modalNovaAtividade: false, modalEditarAtividade: false, modalTarefa: false, atvAtivaId: null, atvAtivaTitulo: '', atvEditar: { id: '', titulo: '', setor_id: '', tempo_valor: 30, tempo_unidade: 'minutos', descricao: '', status_sla: 'Em Andamento' } }">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div>
@@ -82,11 +82,20 @@
                                         {{ CalculoBI.formatar_numero_br(atv.tarefas.count(), 0) }} Etapa(s)
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-center space-x-2">
-                                    <button @click="modalTarefa = true; atvAtivaId = '{{ atv.id }}'; atvAtivaTitulo = '{{ atv.titulo|escape }}'" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 transition cursor-pointer">
+                                <td class="px-6 py-4 text-center space-x-1">
+                                    <button @click="modalTarefa = true; atvAtivaId = '{{ atv.id }}'; atvAtivaTitulo = '{{ atv.titulo|escape }}'" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 transition cursor-pointer" title="Adicionar Micro-Tarefa">
                                         <i class="fa-solid fa-plus-circle"></i>
-                                        <span>Micro-Tarefa</span>
                                     </button>
+
+                                    <button @click="atvEditar = { id: '{{ atv.id }}', titulo: '{{ atv.titulo|escape }}', setor_id: '{{ atv.setor_id }}', tempo_valor: '{{ atv.tempo_estimado_valor }}', tempo_unidade: '{{ atv.tempo_estimado_unidade }}', descricao: '{{ atv.descricao|escape if atv.descricao else '' }}', status_sla: '{{ atv.status_sla }}' }; modalEditarAtividade = true;" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-700 transition cursor-pointer" title="Editar Rotina">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+
+                                    <form action="{{ url_for('gestao.excluir_atividade', id=atv.id) }}" method="POST" class="inline-block" onsubmit="return confirm('Tem certeza que deseja excluir esta rotina?');">
+                                        <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200 dark:border-rose-700 transition cursor-pointer" title="Excluir Rotina">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -153,6 +162,62 @@
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                     <button type="button" @click="modalNovaAtividade = false" class="px-5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">Cancelar</button>
                     <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/20 transition cursor-pointer">Salvar Atividade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Atividade -->
+    <div x-show="modalEditarAtividade" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalEditarAtividade = false">
+            <div class="px-6 py-4 bg-sky-600 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Editar Rotina</span>
+                </h3>
+                <button type="button" @click="modalEditarAtividade = false" class="text-sky-100 hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form :action="'{{ url_for('gestao.listar_atividades') }}'.replace('/atividades', '/atividade/editar/' + atvEditar.id)" method="POST" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Título da Atividade *</label>
+                    <input type="text" name="titulo" x-model="atvEditar.titulo" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Setor *</label>
+                    <select name="setor_id" x-model="atvEditar.setor_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition" required>
+                        {% for s in setores %}
+                            <option value="{{ s.id }}">{{ s.sigla }} - {{ s.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Tempo Estimado (SLA)</label>
+                        <input type="number" name="tempo_estimado_valor" x-model="atvEditar.tempo_valor" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Unidade</label>
+                        <select name="tempo_estimado_unidade" x-model="atvEditar.tempo_unidade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition">
+                            <option value="minutos">Minutos</option>
+                            <option value="horas">Horas</option>
+                            <option value="dias">Dias</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Descrição / POP</label>
+                    <textarea name="descricao" x-model="atvEditar.descricao" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" @click="modalEditarAtividade = false" class="px-5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 shadow-md shadow-sky-500/20 transition cursor-pointer">Atualizar Rotina</button>
                 </div>
             </form>
         </div>

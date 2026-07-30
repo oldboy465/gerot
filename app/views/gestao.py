@@ -14,10 +14,6 @@ gestao_bp = Blueprint('gestao', __name__)
 @gestao_bp.route('/dashboard')
 @login_required
 def dashboard():
-    """
-    Dashboard de Gestão com restrição rigorosa de acesso por perfil e setor.
-    Coordenadores só podem visualizar dados de seus próprios setores autorizados.
-    """
     if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
         flash('Acesso exclusivo para Gestores e Coordenadores.', 'warning')
         return redirect(url_for('operacao.painel'))
@@ -27,7 +23,6 @@ def dashboard():
     data_fim_str = request.args.get('data_fim')
     status_sla_filtro = request.args.get('status_sla')
 
-    # Regra de Negócio de Setores para Coordenador
     if current_user.is_coordenador and not current_user.is_gestor:
         setores_permitidos_ids = current_user.todos_setores_ids
         if setor_id and setor_id not in setores_permitidos_ids:
@@ -73,7 +68,6 @@ def dashboard():
     total_setores = Setor.query.count()
     total_atividades = AtividadePadrao.query.count()
 
-    # Filtragem estrita da lista de setores visíveis no combo de acordo com o perfil
     if current_user.is_coordenador and not current_user.is_gestor:
         setores_list = Setor.query.filter(Setor.id.in_(current_user.todos_setores_ids)).order_by(Setor.nome.asc()).all()
     else:
@@ -246,7 +240,15 @@ def editar_atividade(id):
 
     atv.titulo = request.form.get('titulo', '').strip() or atv.titulo
     atv.descricao = request.form.get('descricao', '').strip()
-    atv.setor_id = request.form.get('setor_id', type=int) or atv.setor_id
+    
+    novo_setor_id = request.form.get('setor_id', type=int)
+    if novo_setor_id:
+        if current_user.is_coordenador and not current_user.is_gestor:
+            if novo_setor_id in current_user.todos_setores_ids:
+                atv.setor_id = novo_setor_id
+        else:
+            atv.setor_id = novo_setor_id
+
     atv.tempo_estimado_valor = request.form.get('tempo_estimado_valor', type=int) or atv.tempo_estimado_valor
     atv.tempo_estimado_unidade = request.form.get('tempo_estimado_unidade') or atv.tempo_estimado_unidade
     atv.status_sla = request.form.get('status_sla') or atv.status_sla
@@ -255,3 +257,49 @@ def editar_atividade(id):
     db.session.commit()
     flash('Atividade atualizada com sucesso!', 'success')
     return redirect(url_for('gestao.listar_atividades'))
+
+@gestao_bp.route('/atividade/excluir/<int:id>', methods=['POST'])
+@login_required
+def excluir_atividade(id):
+    if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('operacao.painel'))
+
+    atv = AtividadePadrao.query.get_or_404(id)
+    if current_user.is_coordenador and not current_user.is_gestor:
+        if atv.setor_id not in current_user.todos_setores_ids:
+            flash('Acesso negado para excluir esta atividade.', 'danger')
+            return redirect(url_for('gestao.listar_atividades'))
+
+    try:
+        db.session.delete(atv)
+        db.session.commit()
+        flash('Rotina/Atividade removida com sucesso.', 'info')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir atividade: possui lançamentos vinculados.', 'warning')
+
+    return redirect(url_for('gestao.listar_atividades'))
+
+@gestao_bp.route('/lancamento/excluir/<int:id>', methods=['POST'])
+@login_required
+def excluir_lancamento(id):
+    if current_user.is_operador:
+        flash('Operadores não possuem permissão para excluir lançamentos. Solicite ao seu Coordenador.', 'danger')
+        return redirect(url_for('operacao.historico'))
+
+    lanc = Lancamento.query.get_or_404(id)
+    if current_user.is_coordenador and not current_user.is_gestor:
+        if lanc.setor_id not in current_user.todos_setores_ids:
+            flash('Você só pode excluir lançamentos do seu respectivo setor.', 'danger')
+            return redirect(url_for('gestao.dashboard'))
+
+    try:
+        db.session.delete(lanc)
+        db.session.commit()
+        flash('Lançamento excluído com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir lançamento: {str(e)}', 'danger')
+
+    return redirect(request.referrer or url_for('gestao.dashboard'))
