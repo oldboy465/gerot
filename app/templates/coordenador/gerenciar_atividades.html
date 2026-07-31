@@ -19,6 +19,42 @@
         </button>
     </div>
 
+    <!-- Barra de Filtros -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <form method="GET" action="{{ url_for('gestao.listar_atividades') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">FILTRAR POR SETOR</label>
+                <select name="setor_id" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
+                    <option value="">Todos os Setores</option>
+                    {% for s in setores %}
+                        <option value="{{ s.id }}" {% if filtro_setor_id == s.id %}selected{% endif %}>{{ s.sigla }} - {{ s.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">DATA INÍCIO</label>
+                <input type="date" name="data_inicio" value="{{ filtro_data_inicio }}" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">DATA FIM</label>
+                <input type="date" name="data_fim" value="{{ filtro_data_fim }}" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">STATUS SLA</label>
+                <select name="status_sla" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
+                    <option value="Todos" {% if filtro_status_sla == 'Todos' %}selected{% endif %}>Todos</option>
+                    <option value="Em Andamento" {% if filtro_status_sla == 'Em Andamento' %}selected{% endif %}>Em Andamento</option>
+                    <option value="Concluído" {% if filtro_status_sla == 'Concluído' %}selected{% endif %}>Concluído</option>
+                    <option value="Cancelado" {% if filtro_status_sla == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            <div class="md:col-span-4 flex justify-end gap-2 pt-2">
+                <a href="{{ url_for('gestao.listar_atividades') }}" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition">Limpar</a>
+                <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition shadow-sm">Filtrar</button>
+            </div>
+        </form>
+    </div>
+
     <!-- Tabela de Atividades -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
