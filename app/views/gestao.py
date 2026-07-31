@@ -163,15 +163,43 @@ def listar_atividades():
         return redirect(url_for('operacao.painel'))
 
     page = request.args.get('page', 1, type=int)
+    setor_id = request.args.get('setor_id', type=int)
+    data_inicio_str = request.args.get('data_inicio')
+    data_fim_str = request.args.get('data_fim')
+    status_sla = request.args.get('status_sla')
 
     if current_user.is_admin or current_user.is_gestor:
-        query = AtividadePadrao.query.order_by(AtividadePadrao.titulo.asc())
+        query = AtividadePadrao.query
     else:
         setores_permitidos_ids = current_user.todos_setores_ids
-        query = AtividadePadrao.query.filter(AtividadePadrao.setor_id.in_(setores_permitidos_ids)).order_by(AtividadePadrao.titulo.asc())
+        query = AtividadePadrao.query.filter(AtividadePadrao.setor_id.in_(setores_permitidos_ids))
 
+    if setor_id:
+        query = query.filter(AtividadePadrao.setor_id == setor_id)
+
+    if status_sla and status_sla != 'Todos':
+        query = query.filter(AtividadePadrao.status_sla == status_sla)
+
+    # Caso haja filtro por data_inicio/data_fim relativo aos lançamentos vinculados às atividades
+    if data_inicio_str or data_fim_str:
+        query = query.join(Lancamento, AtividadePadrao.id == Lancamento.atividade_id)
+        if data_inicio_str:
+            try:
+                dt_inc = datetime.strptime(data_inicio_str, '%Y-%m-%d').date()
+                query = query.filter(Lancamento.data_programada >= dt_inc)
+            except ValueError:
+                pass
+        if data_fim_str:
+            try:
+                dt_fm = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+                query = query.filter(Lancamento.data_programada <= dt_fm)
+            except ValueError:
+                pass
+        query = query.distinct()
+
+    query = query.order_by(AtividadePadrao.titulo.asc())
     atividades_pagination = query.paginate(page=page, per_page=10, error_out=False)
-    
+
     if current_user.is_coordenador and not current_user.is_gestor:
         setores = Setor.query.filter(Setor.id.in_(current_user.todos_setores_ids)).order_by(Setor.nome.asc()).all()
     else:
@@ -182,6 +210,10 @@ def listar_atividades():
         atividades=atividades_pagination.items,
         pagination=atividades_pagination,
         setores=setores,
+        filtro_setor_id=setor_id,
+        filtro_data_inicio=data_inicio_str or '',
+        filtro_data_fim=data_fim_str or '',
+        filtro_status_sla=status_sla or 'Todos',
         CalculoBI=CalculoBI
     )
 
@@ -195,7 +227,7 @@ def nova_atividade():
     titulo = request.form.get('titulo', '').strip()
     descricao = request.form.get('descricao', '').strip()
     setor_id = request.form.get('setor_id', type=int) or current_user.setor_id
-    
+
     if current_user.is_coordenador and not current_user.is_gestor:
         if setor_id not in current_user.todos_setores_ids:
             flash('Você não tem permissão para cadastrar atividades em um setor não autorizado.', 'danger')
@@ -240,7 +272,7 @@ def editar_atividade(id):
 
     atv.titulo = request.form.get('titulo', '').strip() or atv.titulo
     atv.descricao = request.form.get('descricao', '').strip()
-    
+
     novo_setor_id = request.form.get('setor_id', type=int)
     if novo_setor_id:
         if current_user.is_coordenador and not current_user.is_gestor:
