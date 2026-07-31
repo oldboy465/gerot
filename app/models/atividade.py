@@ -28,7 +28,7 @@ class AtividadePadrao(db.Model):
     tempo_convertido_minutos = db.Column(db.Integer, nullable=False, default=0)
 
     tarefas = db.relationship('TarefaPadrao', backref='atividade_pai', lazy='dynamic', cascade="all, delete-orphan")
-    lancamentos = db.relationship('Lancamento', backref='atividade_referencia', lazy='dynamic')
+    lancamentos = db.relationship('Lancamento', backref='atividade_referencia', lazy='dynamic', cascade="all, delete-orphan")
 
     responsavel = db.relationship('Usuario', foreign_keys=[responsavel_id], backref='atividades_atribuidas')
 
@@ -58,7 +58,6 @@ class AtividadePadrao(db.Model):
 
     def __repr__(self):
         return f'<Atividade {self.titulo} ({self.tempo_convertido_minutos} min) - SLA: {self.status_sla}>'
-
 
 class TarefaPadrao(db.Model):
     """

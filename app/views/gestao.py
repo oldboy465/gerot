@@ -304,12 +304,13 @@ def excluir_atividade(id):
             return redirect(url_for('gestao.listar_atividades'))
 
     try:
+        Lancamento.query.filter_by(atividade_id=atv.id).delete(synchronize_session=False)
         db.session.delete(atv)
         db.session.commit()
         flash('Rotina/Atividade removida com sucesso.', 'info')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao excluir atividade: possui lançamentos vinculados.', 'warning')
+        flash(f'Erro ao excluir atividade: {str(e)}', 'danger')
 
     return redirect(url_for('gestao.listar_atividades'))
 
@@ -334,4 +335,4 @@ def excluir_lancamento(id):
         db.session.rollback()
         flash(f'Erro ao excluir lançamento: {str(e)}', 'danger')
 
-    return redirect(request.referrer or url_for('gestao.dashboard'))
+    return redirect(request.referrer or url_for('gestao.dashboard'))    
