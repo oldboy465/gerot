@@ -1,0 +1,15 @@
+
+services:
+  gerot-app:
+    build: .
+    container_name: gerot_saas
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=sua-chave-secreta-producao
+      - FLASK_ENV=development
+    volumes:
+      # Mapeia as pastas de banco de dados e uploads para não perder dados
+      - ./dados:/app/dados
+      - ./app/static/uploads:/app/static/uploads
+    restart: always
