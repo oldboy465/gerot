@@ -199,8 +199,17 @@ def editar_usuario(id):
 
     if request.method == 'POST':
         try:
-            usuario.nome_completo = request.form.get('nome') or request.form.get('nome_completo')
-            usuario.email = request.form.get('email')
+            cpf_edit = request.form.get('cpf')
+            if cpf_edit:
+                cpf_edit = cpf_edit.strip()
+                usuario_mesmo_cpf = Usuario.query.filter(Usuario.cpf == cpf_edit, Usuario.id != usuario.id).first()
+                if usuario_mesmo_cpf:
+                    flash(f'Já existe um usuário ({usuario_mesmo_cpf.nome_completo}) vinculado a este CPF {cpf_edit}. Redirecionado para sua ficha.', 'warning')
+                    return redirect(url_for('admin.editar_usuario', id=usuario_mesmo_cpf.id))
+                usuario.cpf = cpf_edit
+
+            usuario.nome_completo = request.form.get('nome') or request.form.get('nome_completo') or usuario.nome_completo
+            usuario.email = request.form.get('email') or usuario.email
             
             tel_input = request.form.get('telefone') or request.form.get('telefone_principal')
             if tel_input:
@@ -259,7 +268,7 @@ def excluir_massa_usuarios():
     
     ids = request.form.getlist('usuario_ids')
     if not ids:
-        flash('Nenhum usuário selecionado para exclusão.', 'warning')
+        flash('Nenhum setor selecionado para exclusão.', 'warning')
         return redirect(url_for('admin.listar_usuarios'))
     
     try:

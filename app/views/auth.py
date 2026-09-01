@@ -87,6 +87,15 @@ def registrar():
             flash('Informe um número de telefone válido com pelo menos 8 dígitos.', 'danger')
             return redirect(url_for('auth.registrar'))
 
+        usuario_cpf_existente = Usuario.query.filter_by(cpf=cpf).first()
+        if usuario_cpf_existente:
+            flash(f'Já existe um CPF vinculado a este usuário ({usuario_cpf_existente.nome_completo}). Redirecionando para edição.', 'warning')
+            return redirect(url_for('admin.editar_usuario', id=usuario_cpf_existente.id))
+
+        if Usuario.query.filter_by(email=email).first():
+            flash('E-mail já cadastrado no sistema.', 'danger')
+            return redirect(url_for('auth.registrar'))
+
         rg_numero = request.form.get('rg_numero')
         rg_orgao = request.form.get('rg_orgao')
         rg_uf = request.form.get('rg_uf')
@@ -127,10 +136,6 @@ def registrar():
 
         if senha and senha != confirmacao:
             flash('As senhas não conferem.', 'danger')
-            return redirect(url_for('auth.registrar'))
-
-        if Usuario.query.filter((Usuario.email == email) | (Usuario.cpf == cpf)).first():
-            flash('E-mail ou CPF já cadastrado no sistema.', 'danger')
             return redirect(url_for('auth.registrar'))
 
         username_gerado = email.split('@')[0]

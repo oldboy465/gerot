@@ -180,7 +180,6 @@ def listar_atividades():
     if status_sla and status_sla != 'Todos':
         query = query.filter(AtividadePadrao.status_sla == status_sla)
 
-    # Caso haja filtro por data_inicio/data_fim relativo aos lançamentos vinculados às atividades
     if data_inicio_str or data_fim_str:
         query = query.join(Lancamento, AtividadePadrao.id == Lancamento.atividade_id)
         if data_inicio_str:
@@ -314,6 +313,49 @@ def excluir_atividade(id):
 
     return redirect(url_for('gestao.listar_atividades'))
 
+@gestao_bp.route('/atividade/concluir/<int:id>', methods=['POST'])
+@login_required
+def concluir_atividade(id):
+    if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('gestao.listar_atividades'))
+
+    atv = AtividadePadrao.query.get_or_404(id)
+    if current_user.is_coordenador and not current_user.is_gestor:
+        if atv.setor_id not in current_user.todos_setores_ids:
+            flash('Você só pode concluir atividades do seu respectivo setor.', 'danger')
+            return redirect(url_for('gestao.listar_atividades'))
+
+    try:
+        duracao = request.form.get('duracao_minutos', type=int) or atv.tempo_convertido_minutos or 30
+        obs = request.form.get('observacoes', 'Concluído diretamente pela Coordenação do Setor.')
+        agora = datetime.utcnow()
+
+        novo_lancamento = Lancamento(
+            usuario_id=current_user.id,
+            setor_id=atv.setor_id,
+            atividade_id=atv.id,
+            tarefa_id=None,
+            data_hora_inicio=agora,
+            data_hora_fim=agora,
+            duracao_minutos=duracao,
+            eficiencia_percentual=100.0,
+            dentro_do_prazo=True,
+            observacoes=obs,
+            data_programada=agora.date(),
+            data_registro=agora
+        )
+        db.session.add(novo_lancamento)
+
+        atv.status_sla = 'Concluído'
+        db.session.commit()
+        flash(f'Atividade "{atv.titulo}" concluída e registrada na produção do setor com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao concluir atividade: {str(e)}', 'danger')
+
+    return redirect(url_for('gestao.listar_atividades'))
+
 @gestao_bp.route('/lancamento/excluir/<int:id>', methods=['POST'])
 @login_required
 def excluir_lancamento(id):
@@ -335,4 +377,4 @@ def excluir_lancamento(id):
         db.session.rollback()
         flash(f'Erro ao excluir lançamento: {str(e)}', 'danger')
 
-    return redirect(request.referrer or url_for('gestao.dashboard'))    
+    return redirect(request.referrer or url_for('gestao.dashboard'))

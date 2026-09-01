@@ -62,12 +62,12 @@ def setup_inicial():
                 status_cadastro='completo',
                 data_admissao=datetime.utcnow().date()
             )
-            admin_user.set_password('allspark')
+            admin_user.set_password('admin')
             db.session.add(admin_user)
         else:
             admin_user.username = 'admin'
             admin_user.email = 'admin@transul.com.br'
-            admin_user.set_password('allspark')
+            admin_user.set_password('admin')
             admin_user.role = 'admin'
             admin_user.ativo = True
             if setor_root:
