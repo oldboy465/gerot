@@ -19,6 +19,17 @@ def arquivo_permitido(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
+def parse_datetime_input(dt_str):
+    if not dt_str:
+        return None
+    try:
+        return datetime.strptime(dt_str.strip(), '%Y-%m-%dT%H:%M')
+    except ValueError:
+        try:
+            return datetime.strptime(dt_str.strip(), '%Y-%m-%d %H:%M')
+        except ValueError:
+            return None
+
 @gestao_bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -246,6 +257,13 @@ def nova_atividade():
     tempo_unidade = request.form.get('tempo_estimado_unidade', 'minutos')
     status_sla = request.form.get('status_sla', 'Não Iniciado')
 
+    # Coleta os novos campos de previsão de início e término
+    dt_inicio_prev = parse_datetime_input(request.form.get('data_inicio_prevista'))
+    dt_fim_prev = parse_datetime_input(request.form.get('data_fim_prevista'))
+
+    if dt_inicio_prev and dt_fim_prev and dt_fim_prev <= dt_inicio_prev:
+        flash('Aviso: O prazo de término previsto deve ser posterior ao início previsto.', 'warning')
+
     if not titulo:
         flash('O título da atividade é obrigatório.', 'danger')
         return redirect(url_for('gestao.listar_atividades'))
@@ -257,6 +275,8 @@ def nova_atividade():
         tempo_estimado_valor=tempo_valor,
         tempo_estimado_unidade=tempo_unidade,
         status_sla=status_sla,
+        data_inicio_prevista=dt_inicio_prev,
+        data_fim_prevista=dt_fim_prev,
         is_rotineira=True
     )
     atv.atualizar_tempo()
@@ -293,6 +313,13 @@ def editar_atividade(id):
     atv.tempo_estimado_valor = request.form.get('tempo_estimado_valor', type=int) or atv.tempo_estimado_valor
     atv.tempo_estimado_unidade = request.form.get('tempo_estimado_unidade') or atv.tempo_estimado_unidade
     atv.status_sla = request.form.get('status_sla') or atv.status_sla
+
+    # Atualiza prazos estimados se fornecidos
+    if 'data_inicio_prevista' in request.form:
+        atv.data_inicio_prevista = parse_datetime_input(request.form.get('data_inicio_prevista'))
+    if 'data_fim_prevista' in request.form:
+        atv.data_fim_prevista = parse_datetime_input(request.form.get('data_fim_prevista'))
+
     atv.atualizar_tempo()
 
     db.session.commit()

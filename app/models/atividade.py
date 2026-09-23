@@ -7,6 +7,7 @@ class AtividadePadrao(db.Model):
     Representa o "O Que Fazer".
     Ex: "Conciliação Bancária", "Carregamento de Caminhão".
     Status padronizados: 'Não Iniciado', 'Em Andamento', 'Concluído', 'Cancelado'.
+    Campos de previsão temporal inicial e final incluídos com segurança para o banco.
     """
     __tablename__ = 'atividades_padrao'
 
@@ -28,6 +29,10 @@ class AtividadePadrao(db.Model):
     tempo_estimado_unidade = db.Column(db.String(20), default='minutos', nullable=False)
 
     tempo_convertido_minutos = db.Column(db.Integer, nullable=False, default=0)
+
+    # Prazos estimados de início e fim definidos pela Liderança/Coordenação (sem quebrar tabelas pré-existentes)
+    data_inicio_prevista = db.Column(db.DateTime, nullable=True)
+    data_fim_prevista = db.Column(db.DateTime, nullable=True)
 
     tarefas = db.relationship('TarefaPadrao', backref='atividade_pai', lazy='dynamic', cascade="all, delete-orphan")
     lancamentos = db.relationship('Lancamento', backref='atividade_referencia', lazy='dynamic', cascade="all, delete-orphan")
@@ -71,6 +76,22 @@ class AtividadePadrao(db.Model):
             self.status_sla = novo_status
         else:
             self.status_sla = 'Em Andamento'
+
+    @property
+    def inicio_previsto_formatado(self):
+        return self.data_inicio_prevista.strftime('%d/%m/%Y %H:%M') if self.data_inicio_prevista else '--'
+
+    @property
+    def fim_previsto_formatado(self):
+        return self.data_fim_prevista.strftime('%d/%m/%Y %H:%M') if self.data_fim_prevista else '--'
+
+    @property
+    def inicio_previsto_iso(self):
+        return self.data_inicio_prevista.strftime('%Y-%m-%dT%H:%M') if self.data_inicio_prevista else ''
+
+    @property
+    def fim_previsto_iso(self):
+        return self.data_fim_prevista.strftime('%Y-%m-%dT%H:%M') if self.data_fim_prevista else ''
 
     def __repr__(self):
         return f'<Atividade {self.titulo} ({self.tempo_convertido_minutos} min úteis) - Status: {self.status_sla}>'
