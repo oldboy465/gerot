@@ -3,7 +3,16 @@
 {% block title %}Engenharia de Rotinas | GEROT{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="{ modalNovaAtividade: false, modalEditarAtividade: false, modalTarefa: false, modalConcluir: false, atvAtivaId: null, atvAtivaTitulo: '', atvConcluir: { id: '', titulo: '', duracao: 30 }, atvEditar: { id: '', titulo: '', setor_id: '', tempo_valor: 30, tempo_unidade: 'minutos', descricao: '', status_sla: 'Em Andamento' } }">
+<div class="space-y-6" x-data="{ 
+    modalNovaAtividade: false, 
+    modalEditarAtividade: false, 
+    modalTarefa: false, 
+    modalConcluir: false, 
+    atvAtivaId: null, 
+    atvAtivaTitulo: '', 
+    atvConcluir: { id: '', titulo: '', duracao: 30, arquivosNomes: [] }, 
+    atvEditar: { id: '', titulo: '', setor_id: '', tempo_valor: 30, tempo_unidade: 'minutos', descricao: '', status_sla: 'Não Iniciado' } 
+}">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div>
@@ -11,7 +20,7 @@
                 <i class="fa-solid fa-list-check text-amber-600"></i>
                 <span>Engenharia de Rotinas e Catálogo de Serviços</span>
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Catálogo de serviços e definição de SLAs do setor.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Gestão de catálogo, status operacionais (Não Iniciado, Em Andamento, Concluído) e SLAs em horas úteis.</p>
         </div>
         <button @click="modalNovaAtividade = true" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/20 transition flex items-center gap-2 justify-center cursor-pointer">
             <i class="fa-solid fa-plus"></i>
@@ -25,7 +34,7 @@
             <div>
                 <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">FILTRAR POR SETOR</label>
                 <select name="setor_id" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
-                    <option value="">Todos os Setores</option>
+                    <option value="">Todos os Setores Autorizados</option>
                     {% for s in setores %}
                         <option value="{{ s.id }}" {% if filtro_setor_id == s.id %}selected{% endif %}>{{ s.sigla }} - {{ s.nome }}</option>
                     {% endfor %}
@@ -40,9 +49,10 @@
                 <input type="date" name="data_fim" value="{{ filtro_data_fim }}" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
             </div>
             <div>
-                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">STATUS SLA</label>
+                <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">STATUS DA ROTINA</label>
                 <select name="status_sla" class="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-amber-500 transition">
-                    <option value="Todos" {% if filtro_status_sla == 'Todos' %}selected{% endif %}>Todos</option>
+                    <option value="Todos" {% if filtro_status_sla == 'Todos' %}selected{% endif %}>Todos os Status</option>
+                    <option value="Não Iniciado" {% if filtro_status_sla == 'Não Iniciado' %}selected{% endif %}>Não Iniciado</option>
                     <option value="Em Andamento" {% if filtro_status_sla == 'Em Andamento' %}selected{% endif %}>Em Andamento</option>
                     <option value="Concluído" {% if filtro_status_sla == 'Concluído' %}selected{% endif %}>Concluído</option>
                     <option value="Cancelado" {% if filtro_status_sla == 'Cancelado' %}selected{% endif %}>Cancelado</option>
@@ -69,8 +79,8 @@
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         <th class="px-6 py-3.5">Atividade / Descrição</th>
-                        <th class="px-6 py-3.5">Responsável</th>
-                        <th class="px-6 py-3.5">Meta (SLA)</th>
+                        <th class="px-6 py-3.5">Status Atual</th>
+                        <th class="px-6 py-3.5">Meta (SLA Útil)</th>
                         <th class="px-6 py-3.5">Tipo</th>
                         <th class="px-6 py-3.5">Sub-Etapas</th>
                         <th class="px-6 py-3.5 text-center">Ações</th>
@@ -84,16 +94,23 @@
                                     <p class="font-bold text-slate-800 dark:text-slate-100">{{ atv.titulo }}</p>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{{ atv.descricao or 'Sem descrição definida.' }}</p>
                                 </td>
-                                <td class="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                    {% if atv.responsavel %}
-                                        <span class="inline-flex items-center gap-1.5">
-                                            <span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-[10px]">
-                                                {{ atv.responsavel.username[0]|upper }}
-                                            </span>
-                                            <span>{{ atv.responsavel.nome_completo.split(' ')[0] }}</span>
+                                <td class="px-6 py-4">
+                                    {% if atv.status_sla == 'Concluído' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                            <i class="fa-solid fa-circle-check me-1.5 text-emerald-600"></i> Concluído
+                                        </span>
+                                    {% elif atv.status_sla == 'Em Andamento' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">
+                                            <i class="fa-solid fa-spinner fa-spin me-1.5 text-sky-600"></i> Em Andamento
+                                        </span>
+                                    {% elif atv.status_sla == 'Cancelado' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">
+                                            <i class="fa-solid fa-ban me-1.5 text-rose-600"></i> Cancelado
                                         </span>
                                     {% else %}
-                                        <span class="text-slate-400 font-normal">Equipe (Geral)</span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                            <i class="fa-regular fa-circle-pause me-1.5 text-slate-500"></i> Não Iniciado
+                                        </span>
                                     {% endif %}
                                 </td>
                                 <td class="px-6 py-4">
@@ -119,7 +136,8 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center space-x-1">
-                                    <button @click="atvConcluir = { id: '{{ atv.id }}', titulo: '{{ atv.titulo|escape }}', duracao: '{{ atv.tempo_convertido_minutos or 30 }}' }; modalConcluir = true;" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition cursor-pointer shadow-sm" title="Concluir Atividade / Registrar Produção">
+                                    <!-- Botão Concluir pelo Líder/Coordenador -->
+                                    <button @click="atvConcluir = { id: '{{ atv.id }}', titulo: '{{ atv.titulo|escape }}', duracao: '{{ atv.tempo_convertido_minutos or 30 }}', arquivosNomes: [] }; modalConcluir = true;" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition cursor-pointer shadow-sm" title="Concluir Rotina e Apontar Evidências">
                                         <i class="fa-solid fa-check-double"></i>
                                         <span>Concluir</span>
                                     </button>
@@ -152,33 +170,52 @@
         </div>
     </div>
 
-    <!-- Modal Concluir Atividade (Coordenador) -->
-    <div x-show="modalConcluir" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalConcluir = false">
+    <!-- Modal Concluir Atividade (Líder / Coordenador) -->
+    <div x-show="modalConcluir" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalConcluir = false">
             <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
                 <h3 class="font-bold text-base flex items-center gap-2">
                     <i class="fa-solid fa-circle-check"></i>
-                    <span>Concluir Atividade</span>
+                    <span>Concluir Rotina e Registar Produção</span>
                 </h3>
                 <button type="button" @click="modalConcluir = false" class="text-emerald-100 hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <form :action="'{{ url_for('gestao.listar_atividades') }}'.replace('/atividades', '/atividade/concluir/' + atvConcluir.id)" method="POST" class="p-6 space-y-4">
-                <div class="p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl border border-emerald-200 dark:border-emerald-700">
-                    <p class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Rotina Selecionada:</p>
-                    <p class="text-sm font-bold text-emerald-950 dark:text-emerald-200 mt-0.5" x-text="atvConcluir.titulo"></p>
+            <form :action="'{{ url_for('gestao.listar_atividades') }}'.replace('/atividades', '/atividade/concluir/' + atvConcluir.id)" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+                <div class="p-3.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl border border-emerald-200 dark:border-emerald-700">
+                    <p class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Rotina a Concluir:</p>
+                    <p class="text-sm font-bold text-emerald-950 dark:text-emerald-100 mt-0.5" x-text="atvConcluir.titulo"></p>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Duração Realizada (Minutos) *</label>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Duração Útil Realizada (Minutos) *</label>
                     <input type="number" name="duracao_minutos" x-model="atvConcluir.duracao" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 text-sm outline-none transition">
                 </div>
 
+                <!-- Upload de Múltiplas Evidências pelo Líder -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Observações / Detalhes</label>
-                    <textarea name="observacoes" rows="3" placeholder="Informações adicionais sobre a conclusão..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 text-sm outline-none transition">Concluído diretamente pela Coordenação do Setor.</textarea>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Anexar Documentos de Evidência (Opcional - Múltiplos)</label>
+                    <input type="file" name="arquivos_evidencia" multiple accept=".pdf,.png,.jpg,.jpeg" 
+                           @change="atvConcluir.arquivosNomes = Array.from($event.target.files).map(f => f.name)"
+                           class="w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-950 dark:file:text-emerald-300">
+                    
+                    <template x-if="atvConcluir.arquivosNomes.length > 0">
+                        <div class="mt-2 text-xs text-emerald-700 dark:text-emerald-300 space-y-0.5">
+                            <span class="font-bold">Ficheiros a enviar:</span>
+                            <ul class="list-disc list-inside">
+                                <template x-for="n in atvConcluir.arquivosNomes" :key="n">
+                                    <li class="truncate" x-text="n"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Observações da Conclusão</label>
+                    <textarea name="observacoes" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 text-sm outline-none transition">Conclusão efetuada diretamente pela Liderança do Setor.</textarea>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -190,7 +227,7 @@
     </div>
 
     <!-- Modal Nova Atividade -->
-    <div x-show="modalNovaAtividade" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+    <div x-show="modalNovaAtividade" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalNovaAtividade = false">
             <div class="px-6 py-4 bg-amber-600 text-white flex items-center justify-between">
                 <h3 class="font-bold text-base flex items-center gap-2">
@@ -205,36 +242,44 @@
             <form action="{{ url_for('gestao.nova_atividade') }}" method="POST" class="p-6 space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Título da Atividade *</label>
-                    <input type="text" name="titulo" required placeholder="Ex: Análise de Contratos" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition">
+                    <input type="text" name="titulo" required placeholder="Ex: Análise e Conferência de Faturas" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none transition">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Setor *</label>
-                    <select name="setor_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition" required>
+                    <select name="setor_id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none transition" required>
                         {% for s in setores %}
                             <option value="{{ s.id }}" {% if current_user.setor_id == s.id %}selected{% endif %}>{{ s.sigla }} - {{ s.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Tempo Estimado (SLA)</label>
-                        <input type="number" name="tempo_estimado_valor" value="30" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">SLA (Valor)</label>
+                        <input type="number" name="tempo_estimado_valor" value="30" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none transition">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Unidade</label>
-                        <select name="tempo_estimado_unidade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition">
+                        <select name="tempo_estimado_unidade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none transition">
                             <option value="minutos" selected>Minutos</option>
                             <option value="horas">Horas</option>
-                            <option value="dias">Dias</option>
+                            <option value="dias">Dias (8h úteis)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Status Inicial</label>
+                        <select name="status_sla" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none transition">
+                            <option value="Não Iniciado" selected>Não Iniciado</option>
+                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Concluído">Concluído</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Descrição / POP</label>
-                    <textarea name="descricao" rows="3" placeholder="Instruções básicas para o operador..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm outline-none transition"></textarea>
+                    <textarea name="descricao" rows="3" placeholder="Instruções e escopo da atividade..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none transition"></textarea>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -246,12 +291,12 @@
     </div>
 
     <!-- Modal Editar Atividade -->
-    <div x-show="modalEditarAtividade" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+    <div x-show="modalEditarAtividade" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalEditarAtividade = false">
             <div class="px-6 py-4 bg-sky-600 text-white flex items-center justify-between">
                 <h3 class="font-bold text-base flex items-center gap-2">
                     <i class="fa-solid fa-pen-to-square"></i>
-                    <span>Editar Rotina</span>
+                    <span>Editar Rotina e Status</span>
                 </h3>
                 <button type="button" @click="modalEditarAtividade = false" class="text-sky-100 hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -273,9 +318,9 @@
                     </select>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Tempo Estimado (SLA)</label>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">SLA (Valor)</label>
                         <input type="number" name="tempo_estimado_valor" x-model="atvEditar.tempo_valor" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition">
                     </div>
                     <div>
@@ -283,7 +328,16 @@
                         <select name="tempo_estimado_unidade" x-model="atvEditar.tempo_unidade" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition">
                             <option value="minutos">Minutos</option>
                             <option value="horas">Horas</option>
-                            <option value="dias">Dias</option>
+                            <option value="dias">Dias (8h úteis)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Status da Rotina</label>
+                        <select name="status_sla" x-model="atvEditar.status_sla" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 text-sm outline-none transition">
+                            <option value="Não Iniciado">Não Iniciado</option>
+                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Cancelado">Cancelado</option>
                         </select>
                     </div>
                 </div>
@@ -302,7 +356,7 @@
     </div>
 
     <!-- Modal Nova Micro-Tarefa -->
-    <div x-show="modalTarefa" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
+    <div x-show="modalTarefa" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" x-cloak>
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden" @click.away="modalTarefa = false">
             <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
                 <h3 class="font-bold text-base flex items-center gap-2">
@@ -324,7 +378,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Descrição da Tarefa *</label>
-                    <input type="text" name="descricao" required placeholder="Ex: CONFERÊNCIA DE DOCUMENTOS" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm uppercase outline-none transition">
+                    <input type="text" name="descricao" required placeholder="Ex: CONFERÊNCIA DE DOCUMENTAÇÃO" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 text-sm uppercase outline-none transition">
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">

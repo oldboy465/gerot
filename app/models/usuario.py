@@ -14,6 +14,11 @@ class Usuario(UserMixin, db.Model):
     """
     Entidade Usuário - Cadastro Completo (RH + Acesso).
     Contém dados de login, identificação pessoal, endereço e vínculo trabalhista.
+    Nomenclatura de Perfis GEROT:
+      - Colaborador (antigo operador)
+      - Líder (antigo coordenador)
+      - Diretor (antigo gestor)
+      - Administrador (admin)
     """
     __tablename__ = 'usuarios'
 
@@ -23,7 +28,8 @@ class Usuario(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256))
 
-    role = db.Column(db.String(20), default='operador', nullable=False)
+    # Papéis do sistema: colaborador, lider, diretor, admin
+    role = db.Column(db.String(20), default='colaborador', nullable=False)
     ativo = db.Column(db.Boolean, default=False)
 
     nome_completo = db.Column(db.String(150), nullable=False)
@@ -37,7 +43,7 @@ class Usuario(UserMixin, db.Model):
     sexo = db.Column(db.String(20))
     estado_civil = db.Column(db.String(20))
 
-    telefone_principal = db.Column(db.String(20))
+    telefone_principal = db.Column(db.String(30))
 
     logradouro = db.Column(db.String(150))
     numero_endereco = db.Column(db.String(20))
@@ -76,15 +82,38 @@ class Usuario(UserMixin, db.Model):
 
     @staticmethod
     def sanitizar_telefone(telefone_raw):
-        """Remove caracteres não numéricos e formata amigavelmente o telefone."""
+        """
+        Higieniza número de telefone e WhatsApp.
+        Aceita formatos variados sem quebrar o fluxo de cadastro.
+        """
         if not telefone_raw:
             return ""
         digits = re.sub(r'\D', '', str(telefone_raw))
+        if len(digits) == 13 and digits.startswith('55'):
+            digits = digits[2:]
+        if len(digits) == 12 and digits.startswith('55'):
+            digits = digits[2:]
+
         if len(digits) == 11:
             return f"({digits[:2]}) {digits[2:7]}-{digits[7:]}"
         elif len(digits) == 10:
             return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
-        return digits or str(telefone_raw)
+        elif len(digits) > 0:
+            return digits
+        return str(telefone_raw).strip()
+
+    @staticmethod
+    def sanitizar_email(email_raw):
+        """
+        Garante que o e-mail possua o domínio institucional @transultransporte.com.br.
+        """
+        if not email_raw:
+            return ""
+        email_clean = str(email_raw).strip().lower()
+        if '@' in email_clean:
+            usuario_parte = email_clean.split('@')[0].strip()
+            return f"{usuario_parte}@transultransporte.com.br"
+        return f"{email_clean}@transultransporte.com.br"
 
     def set_password(self, password):
         """Cria o hash seguro da senha."""
@@ -96,7 +125,7 @@ class Usuario(UserMixin, db.Model):
 
     def verificar_status_cadastro(self):
         """
-        Verifica se os campos obrigatórios do RH estão preenchidos
+        Verifica se os campos essenciais estão preenchidos
         e atualiza o status_cadastro.
         """
         campos_obrigatorios = [
@@ -119,20 +148,46 @@ class Usuario(UserMixin, db.Model):
         return ids
 
     @property
+    def role_label(self):
+        """Rótulo legível do perfil para apresentação."""
+        mapa = {
+            'admin': 'Administrador',
+            'diretor': 'Diretor',
+            'gestor': 'Diretor',
+            'lider': 'Líder',
+            'coordenador': 'Líder',
+            'colaborador': 'Colaborador',
+            'operador': 'Colaborador'
+        }
+        return mapa.get(self.role.lower(), self.role.title())
+
+    @property
     def is_admin(self):
         return self.role == 'admin'
 
     @property
     def is_gestor(self):
-        return self.role in ['admin', 'gestor']
+        return self.role in ['admin', 'gestor', 'diretor']
+
+    @property
+    def is_diretor(self):
+        return self.is_gestor
 
     @property
     def is_coordenador(self):
-        return self.role == 'coordenador'
+        return self.role in ['coordenador', 'lider']
+
+    @property
+    def is_lider(self):
+        return self.is_coordenador
 
     @property
     def is_operador(self):
-        return self.role == 'operador'
+        return self.role in ['operador', 'colaborador']
+
+    @property
+    def is_colaborador(self):
+        return self.is_operador
 
     def pode_gerenciar_setor(self, target_setor_id):
         """Valida se o usuário tem permissão para gerenciar rotinas do setor especificado."""
@@ -142,8 +197,21 @@ class Usuario(UserMixin, db.Model):
             return True
         return False
 
+    def pode_concluir_atividade(self, target_setor_id=None):
+        """
+        Define permissão de conclusão direta de atividades.
+        Colaborador e Líder (do seu setor) podem concluir atividades.
+        """
+        if self.is_gestor:
+            return True
+        if self.is_coordenador:
+            return target_setor_id in self.todos_setores_ids if target_setor_id else True
+        if self.is_operador:
+            return target_setor_id == self.setor_id if target_setor_id else True
+        return False
+
     def pode_deletar_lancamento(self, lancamento_obj):
-        """Operador não pode deletar nada. Coordenador só deleta do seu setor. Gestor deleta tudo."""
+        """Colaborador não pode deletar. Líder deleta apenas do seu setor. Diretor/Admin deleta tudo."""
         if self.is_operador:
             return False
         if self.is_gestor:
@@ -153,4 +221,4 @@ class Usuario(UserMixin, db.Model):
         return False
 
     def __repr__(self):
-        return f'<Usuario {self.username} - {self.cargo}>'
+        return f'<Usuario {self.username} - {self.role_label} ({self.cargo})>'

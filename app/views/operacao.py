@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.models.atividade import AtividadePadrao, TarefaPadrao
 from app.models.lancamento import Lancamento
+from app.models.anexo import AnexoLancamento
 from app.services.calculo_bi import CalculoBI
 
 operacao_bp = Blueprint('operacao', __name__)
@@ -19,17 +20,22 @@ def arquivo_permitido(filename):
 @login_required
 def painel():
     """
-    Dashboard Operacional (Inbox).
-    Mostra as atividades disponíveis para o setor ou atribuídas ao usuário.
-    Renders app/templates/operador/painel.html
+    Dashboard Operacional (Inbox de Apontamento).
+    Acessível por Colaboradores e Líderes para lançamento e acompanhamento diário.
     """
-    atividades = AtividadePadrao.query.filter(
-        AtividadePadrao.setor_id == current_user.setor_id,
-        db.or_(
-            AtividadePadrao.responsavel_id == None,
-            AtividadePadrao.responsavel_id == current_user.id
-        )
-    ).all()
+    if current_user.is_coordenador:
+        setores_ids = current_user.todos_setores_ids
+        atividades = AtividadePadrao.query.filter(
+            AtividadePadrao.setor_id.in_(setores_ids)
+        ).order_by(AtividadePadrao.titulo.asc()).all()
+    else:
+        atividades = AtividadePadrao.query.filter(
+            AtividadePadrao.setor_id == current_user.setor_id,
+            db.or_(
+                AtividadePadrao.responsavel_id == None,
+                AtividadePadrao.responsavel_id == current_user.id
+            )
+        ).order_by(AtividadePadrao.titulo.asc()).all()
 
     hoje_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -51,7 +57,8 @@ def painel():
 def novo_lancamento():
     """
     Processa o formulário de Apontamento de Produção.
-    Suporta diversas cronologias e upload de arquivo de evidência (PDF, PNG, JPG até 5MB).
+    Suporta upload de múltiplos arquivos comprobatórios (PDF, PNG, JPG, JPEG)
+    e computa a duração em dias e horas úteis (8h às 18h de seg a sex).
     """
     atividade_id = request.form.get('atividade_id')
     inicio_str = request.form.get('data_hora_inicio')
@@ -69,47 +76,30 @@ def novo_lancamento():
         dt_fim = datetime.strptime(fim_str, '%Y-%m-%dT%H:%M')
 
         if dt_fim <= dt_inicio:
-            flash('Erro: A Data/Hora Fim deve ser maior que o Início.', 'danger')
+            flash('Erro: A Data/Hora Fim deve ser superior ao Início.', 'danger')
             return redirect(url_for('operacao.painel'))
 
         atividade = AtividadePadrao.query.get(atividade_id)
         if not atividade:
-            flash('Atividade não encontrada.', 'danger')
+            flash('Atividade não localizada no catálogo.', 'danger')
             return redirect(url_for('operacao.painel'))
 
         observacao_final = f"[{cronologia.upper()}] {observacao_texto}".strip()
 
-        # Processamento de Arquivo de Evidência
-        filename_salvo = None
-        nome_original = None
-
-        if 'arquivo_evidencia' in request.files:
-            file = request.files['arquivo_evidencia']
-            if file and file.filename != '':
-                if not arquivo_permitido(file.filename):
-                    flash('Extensão de arquivo não permitida. Envie apenas PDF, PNG, JPG ou JPEG.', 'danger')
-                    return redirect(url_for('operacao.painel'))
-
-                nome_original = secure_filename(file.filename)
-                ext = nome_original.rsplit('.', 1)[1].lower() if '.' in nome_original else ''
-                filename_salvo = f"evidencia_{current_user.id}_{int(datetime.utcnow().timestamp())}_{uuid.uuid4().hex[:6]}.{ext}"
-
-                upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename_salvo)
-                file.save(upload_path)
-
+        # Instanciação do lançamento com data de competência
         lancamento = Lancamento(
             usuario_id=current_user.id,
-            setor_id=current_user.setor_id,
+            setor_id=atividade.setor_id if (current_user.is_coordenador and atividade.setor_id in current_user.todos_setores_ids) else current_user.setor_id,
             atividade_id=atividade.id,
             tarefa_id=int(tarefa_id) if tarefa_id else None,
             data_hora_inicio=dt_inicio,
             data_hora_fim=dt_fim,
             observacoes=observacao_final,
             data_programada=dt_inicio.date(),
-            arquivo_evidencia=filename_salvo,
-            nome_original_arquivo=nome_original
+            data_registro=datetime.utcnow()
         )
 
+        # Cálculo da duração útil e eficiência de acordo com os dias/horas úteis
         lancamento.calcular_duracao()
 
         if atividade.tempo_convertido_minutos > 0:
@@ -123,79 +113,104 @@ def novo_lancamento():
             lancamento.eficiencia_percentual = 100.0
             lancamento.dentro_do_prazo = True
 
-        cronologias_longas = ['SEMANAL', 'QUINZENAL', 'MENSAL', 'BIMESTRAL', 'TRIMESTRAL', 'QUADRIMESTRAL', 'SEMESTRAL', 'ANUAL']
-
-        if cronologia.upper() not in cronologias_longas:
-            conflito = Lancamento.query.filter(
-                Lancamento.usuario_id == current_user.id,
-                Lancamento.data_hora_inicio < dt_fim,
-                Lancamento.data_hora_fim > dt_inicio,
-                ~Lancamento.observacoes.ilike('%[SEMANAL]%'),
-                ~Lancamento.observacoes.ilike('%[MENSAL]%'),
-                ~Lancamento.observacoes.ilike('%[ANUAL]%')
-            ).first()
-
-            if conflito:
-                flash(f'Atenção: Este horário conflita com a atividade "{conflito.atividade_referencia.titulo}". Lançamento salvo com ressalva.', 'warning')
-            else:
-                flash('Atividade registrada com sucesso!', 'success')
-        else:
-            flash(f'Atividade {cronologia.lower()} registrada e contabilizada no período!', 'success')
-
         db.session.add(lancamento)
+        db.session.flush()
+
+        # Processamento de Múltiplos Arquivos de Evidência
+        arquivos = request.files.getlist('arquivos_evidencia') or request.files.getlist('arquivo_evidencia')
+        arquivos_salvos_count = 0
+
+        for file in arquivos:
+            if file and file.filename != '':
+                if not arquivo_permitido(file.filename):
+                    flash(f'Extensão inválida para o arquivo {file.filename}. Envie apenas PDF, PNG ou JPG.', 'warning')
+                    continue
+
+                nome_original = secure_filename(file.filename)
+                ext = nome_original.rsplit('.', 1)[1].lower() if '.' in nome_original else ''
+                filename_salvo = f"evid_{lancamento.id}_{uuid.uuid4().hex[:8]}.{ext}"
+
+                upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename_salvo)
+                file.save(upload_path)
+                tamanho = os.path.getsize(upload_path) if os.path.exists(upload_path) else 0
+
+                novo_anexo = AnexoLancamento(
+                    lancamento_id=lancamento.id,
+                    arquivo_salvo=filename_salvo,
+                    nome_original=nome_original,
+                    extensao=ext,
+                    tamanho_bytes=tamanho
+                )
+                db.session.add(novo_anexo)
+
+                # Mantém espelho retroativo no primeiro anexo para compatibilidade
+                if arquivos_salvos_count == 0:
+                    lancamento.arquivo_evidencia = filename_salvo
+                    lancamento.nome_original_arquivo = nome_original
+
+                arquivos_salvos_count += 1
+
+        # Atualiza o status da atividade caso tenha sido concluída
+        if atividade.status_sla == 'Não Iniciado':
+            atividade.status_sla = 'Em Andamento'
+
         db.session.commit()
+        msg_anexo = f" com {arquivos_salvos_count} documento(s) anexado(s)" if arquivos_salvos_count > 0 else ""
+        flash(f'Apontamento de produção registrado com sucesso{msg_anexo}!', 'success')
 
     except ValueError:
-        flash('Erro no formato da data/hora. Utilize o seletor padrão.', 'danger')
+        flash('Formato de data e hora inválido.', 'danger')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro técnico ao salvar: {str(e)}', 'danger')
+        flash(f'Erro técnico ao gravar lançamento: {str(e)}', 'danger')
 
     return redirect(url_for('operacao.painel'))
 
 @operacao_bp.route('/tarefa/registrar', methods=['POST'])
 @login_required
 def cadastrar_micro_tarefa():
-    """
-    Permite ao Operador cadastrar uma nova micro-tarefa.
-    """
+    """Permite ao Colaborador ou Líder cadastrar uma nova micro-tarefa."""
     atividade_id = request.form.get('atividade_id')
     descricao = request.form.get('descricao')
 
     if not atividade_id or not descricao:
-        flash('Preencha a descrição da nova tarefa.', 'warning')
+        flash('Preencha a descrição da nova micro-tarefa.', 'warning')
         return redirect(url_for('operacao.painel'))
 
     try:
         atividade = AtividadePadrao.query.get(atividade_id)
-        if not atividade or atividade.setor_id != current_user.setor_id:
-            flash('Atividade não localizada ou acesso negado.', 'danger')
+        if not atividade:
+            flash('Atividade não localizada.', 'danger')
+            return redirect(url_for('operacao.painel'))
+
+        if current_user.is_coordenador and atividade.setor_id not in current_user.todos_setores_ids:
+            flash('Acesso negado para vincular etapas neste setor.', 'danger')
+            return redirect(url_for('operacao.painel'))
+        elif not current_user.is_coordenador and atividade.setor_id != current_user.setor_id:
+            flash('Acesso restrito ao seu próprio setor.', 'danger')
             return redirect(url_for('operacao.painel'))
 
         nova_t = TarefaPadrao(
             atividade_id=atividade_id,
-            descricao=descricao.upper(),
+            descricao=descricao.strip().upper(),
             criado_por_id=current_user.id,
             impacto_percentual=0.0
         )
 
         db.session.add(nova_t)
         db.session.commit()
-        flash(f'Micro-tarefa vinculada com sucesso a: {atividade.titulo}', 'success')
+        flash(f'Micro-tarefa associada com sucesso a: {atividade.titulo}', 'success')
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao registrar tarefa: {str(e)}', 'danger')
+        flash(f'Erro ao registrar etapa: {str(e)}', 'danger')
 
     return redirect(url_for('operacao.painel'))
 
 @operacao_bp.route('/historico')
 @login_required
 def historico():
-    """
-    Visualização completa do histórico pessoal paginado a cada 10 registros.
-    Renders app/templates/operador/historico.html
-    """
+    """Visualização do histórico do usuário com lista paginada e contagem de anexos."""
     page = request.args.get('page', 1, type=int)
 
     pagination = Lancamento.query.filter_by(usuario_id=current_user.id)\
@@ -207,7 +222,5 @@ def historico():
 @operacao_bp.route('/evidencia/download/<filename>')
 @login_required
 def baixar_evidencia(filename):
-    """
-    Permite visualizar/baixar o arquivo de evidência anexado ao lançamento.
-    """
+    """Permite visualizar/baixar qualquer documento de evidência anexado."""
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename, as_attachment=False)

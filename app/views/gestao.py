@@ -1,21 +1,29 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+import os
+import uuid
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import func, extract
 from datetime import datetime
+from werkzeug.utils import secure_filename
 from app import db
 from app.models.setor import Setor
 from app.models.usuario import Usuario
 from app.models.lancamento import Lancamento
 from app.models.atividade import AtividadePadrao, TarefaPadrao
+from app.models.anexo import AnexoLancamento
 from app.services.calculo_bi import CalculoBI
 
 gestao_bp = Blueprint('gestao', __name__)
+
+def arquivo_permitido(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 @gestao_bp.route('/dashboard')
 @login_required
 def dashboard():
     if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
-        flash('Acesso exclusivo para Gestores e Coordenadores.', 'warning')
+        flash('Acesso exclusivo para Diretores e Líderes.', 'warning')
         return redirect(url_for('operacao.painel'))
 
     setor_id = request.args.get('setor_id', type=int)
@@ -26,7 +34,7 @@ def dashboard():
     if current_user.is_coordenador and not current_user.is_gestor:
         setores_permitidos_ids = current_user.todos_setores_ids
         if setor_id and setor_id not in setores_permitidos_ids:
-            flash('Acesso negado a este setor. Você só pode visualizar os setores autorizados em seu cadastro.', 'danger')
+            flash('Acesso restrito aos setores sob sua liderança.', 'danger')
             return redirect(url_for('gestao.dashboard', setor_id=current_user.setor_id))
 
     query = Lancamento.query.join(Usuario, Lancamento.usuario_id == Usuario.id)
@@ -81,9 +89,10 @@ def dashboard():
 
     atividades_totais = atividades_query.all()
     status_sla_counts = {
-        'Concluído': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Concluído'),
-        'Em Andamento': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Em Andamento'),
-        'Cancelado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Cancelado')
+        'Não Iniciado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Não Iniciado'),
+        'Em Andamento': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Em Andamento'),
+        'Concluído': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Concluído'),
+        'Cancelado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Cancelado')
     }
 
     labels_eficiencia_setor = []
@@ -158,8 +167,9 @@ def dashboard():
 @gestao_bp.route('/atividades')
 @login_required
 def listar_atividades():
+    """Catálogo de Rotinas e Serviços com filtragem por status oficial e setor."""
     if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
-        flash('Acesso restrito à gestão de atividades.', 'warning')
+        flash('Acesso restrito à gestão de rotinas.', 'warning')
         return redirect(url_for('operacao.painel'))
 
     page = request.args.get('page', 1, type=int)
@@ -229,12 +239,12 @@ def nova_atividade():
 
     if current_user.is_coordenador and not current_user.is_gestor:
         if setor_id not in current_user.todos_setores_ids:
-            flash('Você não tem permissão para cadastrar atividades em um setor não autorizado.', 'danger')
+            flash('Você não tem permissão para cadastrar rotinas fora dos seus setores.', 'danger')
             return redirect(url_for('gestao.listar_atividades'))
 
     tempo_valor = request.form.get('tempo_estimado_valor', type=int) or 0
     tempo_unidade = request.form.get('tempo_estimado_unidade', 'minutos')
-    status_sla = request.form.get('status_sla', 'Em Andamento')
+    status_sla = request.form.get('status_sla', 'Não Iniciado')
 
     if not titulo:
         flash('O título da atividade é obrigatório.', 'danger')
@@ -253,7 +263,7 @@ def nova_atividade():
 
     db.session.add(atv)
     db.session.commit()
-    flash('Atividade cadastrada com sucesso!', 'success')
+    flash('Atividade/Rotina cadastrada com sucesso!', 'success')
     return redirect(url_for('gestao.listar_atividades'))
 
 @gestao_bp.route('/atividade/editar/<int:id>', methods=['POST'])
@@ -286,7 +296,7 @@ def editar_atividade(id):
     atv.atualizar_tempo()
 
     db.session.commit()
-    flash('Atividade atualizada com sucesso!', 'success')
+    flash('Rotina atualizada com sucesso!', 'success')
     return redirect(url_for('gestao.listar_atividades'))
 
 @gestao_bp.route('/atividade/excluir/<int:id>', methods=['POST'])
@@ -299,36 +309,40 @@ def excluir_atividade(id):
     atv = AtividadePadrao.query.get_or_404(id)
     if current_user.is_coordenador and not current_user.is_gestor:
         if atv.setor_id not in current_user.todos_setores_ids:
-            flash('Acesso negado para excluir esta atividade.', 'danger')
+            flash('Acesso negado para remover esta rotina.', 'danger')
             return redirect(url_for('gestao.listar_atividades'))
 
     try:
         Lancamento.query.filter_by(atividade_id=atv.id).delete(synchronize_session=False)
         db.session.delete(atv)
         db.session.commit()
-        flash('Rotina/Atividade removida com sucesso.', 'info')
+        flash('Rotina removida com sucesso.', 'info')
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao excluir atividade: {str(e)}', 'danger')
+        flash(f'Erro ao excluir rotina: {str(e)}', 'danger')
 
     return redirect(url_for('gestao.listar_atividades'))
 
 @gestao_bp.route('/atividade/concluir/<int:id>', methods=['POST'])
 @login_required
 def concluir_atividade(id):
+    """
+    Permite ao Líder/Coordenador concluir uma rotina diretamente, anexando
+    documentos de evidência comprobatória e gerando o log de produção.
+    """
     if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
-        flash('Acesso negado.', 'danger')
+        flash('Acesso restrito para conclusão direta de atividades.', 'danger')
         return redirect(url_for('gestao.listar_atividades'))
 
     atv = AtividadePadrao.query.get_or_404(id)
     if current_user.is_coordenador and not current_user.is_gestor:
         if atv.setor_id not in current_user.todos_setores_ids:
-            flash('Você só pode concluir atividades do seu respectivo setor.', 'danger')
+            flash('Você só pode concluir atividades pertencentes aos setores autorizados.', 'danger')
             return redirect(url_for('gestao.listar_atividades'))
 
     try:
         duracao = request.form.get('duracao_minutos', type=int) or atv.tempo_convertido_minutos or 30
-        obs = request.form.get('observacoes', 'Concluído diretamente pela Coordenação do Setor.')
+        obs = request.form.get('observacoes', 'Conclusão efetuada diretamente pela Liderança do Setor.')
         agora = datetime.utcnow()
 
         novo_lancamento = Lancamento(
@@ -338,7 +352,7 @@ def concluir_atividade(id):
             tarefa_id=None,
             data_hora_inicio=agora,
             data_hora_fim=agora,
-            duracao_minutos=duracao,
+            duracao_minutos=max(1, duracao),
             eficiencia_percentual=100.0,
             dentro_do_prazo=True,
             observacoes=obs,
@@ -346,10 +360,36 @@ def concluir_atividade(id):
             data_registro=agora
         )
         db.session.add(novo_lancamento)
+        db.session.flush()
+
+        # Upload opcional de evidências no ato de conclusão
+        arquivos = request.files.getlist('arquivos_evidencia') or request.files.getlist('arquivo_evidencia')
+        anexos_count = 0
+        for file in arquivos:
+            if file and file.filename != '':
+                if arquivo_permitido(file.filename):
+                    nome_original = secure_filename(file.filename)
+                    ext = nome_original.rsplit('.', 1)[1].lower() if '.' in nome_original else ''
+                    filename_salvo = f"lider_{novo_lancamento.id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename_salvo)
+                    file.save(upload_path)
+                    
+                    anexo_obj = AnexoLancamento(
+                        lancamento_id=novo_lancamento.id,
+                        arquivo_salvo=filename_salvo,
+                        nome_original=nome_original,
+                        extensao=ext,
+                        tamanho_bytes=os.path.getsize(upload_path) if os.path.exists(upload_path) else 0
+                    )
+                    db.session.add(anexo_obj)
+                    if anexos_count == 0:
+                        novo_lancamento.arquivo_evidencia = filename_salvo
+                        novo_lancamento.nome_original_arquivo = nome_original
+                    anexos_count += 1
 
         atv.status_sla = 'Concluído'
         db.session.commit()
-        flash(f'Atividade "{atv.titulo}" concluída e registrada na produção do setor com sucesso!', 'success')
+        flash(f'Atividade "{atv.titulo}" concluída e registrada com sucesso!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao concluir atividade: {str(e)}', 'danger')
@@ -360,13 +400,13 @@ def concluir_atividade(id):
 @login_required
 def excluir_lancamento(id):
     if current_user.is_operador:
-        flash('Operadores não possuem permissão para excluir lançamentos. Solicite ao seu Coordenador.', 'danger')
+        flash('Colaboradores não possuem permissão para excluir apontamentos. Solicite ao seu Líder.', 'danger')
         return redirect(url_for('operacao.historico'))
 
     lanc = Lancamento.query.get_or_404(id)
     if current_user.is_coordenador and not current_user.is_gestor:
         if lanc.setor_id not in current_user.todos_setores_ids:
-            flash('Você só pode excluir lançamentos do seu respectivo setor.', 'danger')
+            flash('Você só pode excluir lançamentos dos setores autorizados.', 'danger')
             return redirect(url_for('gestao.dashboard'))
 
     try:

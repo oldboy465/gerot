@@ -1,10 +1,10 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_migrate import Migrate
 from config import config
 
-# Inicialização das Extensões (Globais)
+# Inicialização das Extensões Globais
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
@@ -19,10 +19,10 @@ def create_app(config_name='default'):
     migrate.init_app(app, db)
 
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Por favor, faça login para acessar o sistema GEROT.'
+    login_manager.login_message = 'Por favor, inicie sessão para aceder ao sistema GEROT.'
     login_manager.login_message_category = 'warning'
 
-    # --- REGISTRO DE BLUEPRINTS (MÓDULOS) ---
+    # --- REGISTO DOS BLUEPRINTS ---
     from app.views.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
@@ -38,19 +38,21 @@ def create_app(config_name='default'):
     from app.views.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    # Novo: Módulo de Relatórios e Exportação
     from app.views.relatorios import relatorios_bp
     app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
 
-    from flask import redirect, url_for
-    from flask_login import current_user
-
     @app.route('/')
     def index():
+        """
+        Roteamento pós-login considerando os novos perfis homologados:
+        - Colaborador -> Painel Operacional de Lançamentos
+        - Líder / Coordenador -> Dashboard de Gestão
+        - Diretor / Administrador -> Painel Executivo / Dashboard Global
+        """
         if current_user.is_authenticated:
-            if current_user.role == 'operador':
+            if current_user.is_operador and not current_user.is_coordenador and not current_user.is_gestor:
                 return redirect(url_for('operacao.painel'))
-            elif current_user.role == 'coordenador':
+            elif current_user.is_coordenador or current_user.is_gestor:
                 return redirect(url_for('gestao.dashboard'))
             else:
                 return redirect(url_for('admin.dashboard'))

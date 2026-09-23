@@ -1,12 +1,20 @@
 import os
+from datetime import datetime
 from app import create_app, db
 from app.models.usuario import Usuario
 from app.models.setor import Setor
-from datetime import datetime
+from app.models.atividade import AtividadePadrao, TarefaPadrao
+from app.models.lancamento import Lancamento
+from app.models.anexo import AnexoLancamento
 
 app = create_app(os.getenv('FLASK_ENV') or 'default')
 
 def setup_inicial():
+    """
+    Inicializa o banco de dados e cria os registros mestres essenciais.
+    Atualizado para a padronização de e-mails @transultransporte.com.br
+    e os novos papéis (admin, diretor, lider, colaborador).
+    """
     with app.app_context():
         db.create_all()
 
@@ -22,8 +30,8 @@ def setup_inicial():
                 codigo_interno="ADM-000",
                 tipo_setor="Estratégico",
                 natureza_atuacao="Apoio",
-                missao_setor="Gerir a infraestrutura técnica e lógica do sistema GEROT.",
-                descricao_atividades="Manutenção de banco de dados, gestão de acessos e auditoria global.",
+                missao_setor="Gerir a infraestrutura técnica, governança e rotinas do sistema GEROT.",
+                descricao_atividades="Manutenção do banco de dados, gestão de acessos, auditoria e inteligência operacional.",
                 nivel_repetitividade="Baixa",
                 nivel_complexidade="Alta",
                 limite_max_colaboradores=99,
@@ -44,21 +52,26 @@ def setup_inicial():
             print(f">>> [AVISO] Falha na sincronização do setor ROOT: {e}")
             setor_root = Setor.query.filter_by(sigla='ROOT').first() or Setor.query.filter_by(nome=nome_root).first()
 
+        # Busca pelo admin considerando e-mail institucional homologado ou legado
+        email_admin_padrao = "admin@transultransporte.com.br"
         admin_user = Usuario.query.filter(
-            (Usuario.username == 'admin') | (Usuario.email == 'admin@transul.com.br')
+            (Usuario.username == 'admin') | 
+            (Usuario.email == email_admin_padrao) | 
+            (Usuario.email == 'admin@transul.com.br')
         ).first()
 
         if not admin_user:
             admin_user = Usuario(
                 username='admin',
-                email='admin@transul.com.br',
+                email=email_admin_padrao,
                 nome_completo='ADMINISTRADOR DO SISTEMA',
                 cpf='000.000.000-00',
                 role='admin',
                 ativo=True,
                 setor_id=setor_root.id if setor_root else 1,
-                cargo='Arquiteto de Dados',
+                cargo='Diretor de Tecnologia e Processos',
                 funcao='Administração Global',
+                telefone_principal='(98) 99999-9999',
                 status_cadastro='completo',
                 data_admissao=datetime.utcnow().date()
             )
@@ -66,7 +79,7 @@ def setup_inicial():
             db.session.add(admin_user)
         else:
             admin_user.username = 'admin'
-            admin_user.email = 'admin@transul.com.br'
+            admin_user.email = email_admin_padrao
             admin_user.set_password('admin')
             admin_user.role = 'admin'
             admin_user.ativo = True

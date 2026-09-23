@@ -9,23 +9,23 @@
             Relatórios de Produção
         </h3>
         <p class="text-sm text-slate-500 dark:text-slate-400">
-            Geração de extratos e relatórios dinâmicos.
+            Geração de extratos consolidados, relatórios em PDF, Excel, apresentações e WhatsApp.
         </p>
     </div>
 
     <!-- MAIN FILTER CARD -->
-    <div class="tailwind-card p-6 md:p-8 mb-8">
-        <div class="mb-6 border-b border-slate-100 pb-4 dark:border-slate-800 flex items-center justify-between">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 mb-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="mb-6 border-b border-slate-100 pb-4 dark:border-slate-700 flex items-center justify-between">
             <h5 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <i class="fa-solid fa-filter text-blue-600"></i>
                 Filtros de Exportação
             </h5>
             <span class="text-xs text-slate-400">
-                Selecione o período e parâmetros
+                Selecione o período e parâmetros de filtragem
             </span>
         </div>
 
-        <form method="GET" action="" class="space-y-6">
+        <form method="GET" action="{{ url_for('relatorios.index') }}" class="space-y-6">
             
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 
@@ -35,7 +35,7 @@
                         Data Inicial
                     </label>
                     <input type="date" id="data_inicio" name="data_inicio" value="{{ request.args.get('data_inicio', '') }}"
-                           class="form-input-tailwind">
+                           class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <!-- DATA FINAL -->
@@ -44,7 +44,7 @@
                         Data Final
                     </label>
                     <input type="date" id="data_fim" name="data_fim" value="{{ request.args.get('data_fim', '') }}"
-                           class="form-input-tailwind">
+                           class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <!-- SETOR -->
@@ -52,8 +52,8 @@
                     <label for="setor_id" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                         Setor
                     </label>
-                    <select id="setor_id" name="setor_id" class="form-input-tailwind">
-                        <option value="">Todos os Setores</option>
+                    <select id="setor_id" name="setor_id" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Todos os Setores Autorizados</option>
                         {% for setor in setores %}
                             <option value="{{ setor.id }}" {% if request.args.get('setor_id')|int == setor.id %}selected{% endif %}>
                                 {{ setor.nome }}
@@ -67,7 +67,7 @@
                     <label for="usuario_id" class="block text-xs font-semibold uppercase text-slate-700 dark:text-slate-300 mb-1">
                         Colaborador
                     </label>
-                    <select id="usuario_id" name="usuario_id" class="form-input-tailwind">
+                    <select id="usuario_id" name="usuario_id" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Todos os Colaboradores</option>
                         {% for user in usuarios %}
                             <option value="{{ user.id }}" {% if request.args.get('usuario_id')|int == user.id %}selected{% endif %}>
@@ -80,23 +80,33 @@
             </div>
 
             <!-- EXPORT ACTION BUTTONS -->
-            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700 pt-6">
+                <!-- Exportar PDF -->
+                <button type="submit" name="exportar" value="pdf" 
+                        class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Baixar PDF</span>
+                </button>
+
+                <!-- Exportar Excel -->
                 <button type="submit" name="exportar" value="excel" 
-                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-emerald-700 transition">
+                        class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition cursor-pointer">
                     <i class="fa-solid fa-file-excel"></i>
-                    Baixar Excel (.xlsx)
+                    <span>Baixar Excel (.xlsx)</span>
                 </button>
 
-                <button type="submit" name="exportar" value="impressao" formtarget="_blank"
-                        class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
-                    <i class="fa-solid fa-print"></i>
-                    Imprimir / PDF
-                </button>
+                <!-- Exportar PowerPoint Executivo -->
+                <a href="{{ url_for('relatorios.gerar_pptx', setor_id=request.args.get('setor_id', ''), data_inicio=request.args.get('data_inicio', ''), data_fim=request.args.get('data_fim', '')) }}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-700 transition cursor-pointer">
+                    <i class="fa-solid fa-file-powerpoint"></i>
+                    <span>Apresentação PPTX</span>
+                </a>
 
+                <!-- Exportar WhatsApp -->
                 <button type="submit" name="exportar" value="whatsapp" 
-                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-emerald-600 transition">
+                        class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 transition cursor-pointer">
                     <i class="fa-brands fa-whatsapp text-lg"></i>
-                    Formato WhatsApp
+                    <span>Formato WhatsApp</span>
                 </button>
             </div>
 
@@ -105,28 +115,28 @@
 
     <!-- WHATSAPP TEXT RESULT SECTION -->
     {% if texto_wpp %}
-    <div class="tailwind-card p-6 md:p-8">
-        <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-700">
             <h5 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <i class="fa-brands fa-whatsapp text-emerald-500 text-lg"></i>
-                Texto para WhatsApp
+                Texto Formatado para WhatsApp
             </h5>
             <span class="text-xs text-slate-400">Pronto para copiar e colar</span>
         </div>
 
         <div class="relative">
             <textarea id="texto_whatsapp" rows="12" readonly
-                      class="w-full rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{{ texto_wpp }}</textarea>
+                      class="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs text-slate-800 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{{ texto_wpp }}</textarea>
         </div>
 
         <div class="mt-4 flex items-center justify-end gap-3">
-            <a href="{{ url_for('relatorios.gerador') }}" 
-               class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 transition">
+            <a href="{{ url_for('relatorios.index') }}" 
+               class="rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
                 Fechar
             </a>
             <button type="button" 
                     @click="navigator.clipboard.writeText(document.getElementById('texto_whatsapp').value); copySuccess = true; setTimeout(() => copySuccess = false, 3000)"
-                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition shadow">
+                    class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition shadow cursor-pointer">
                 <i class="fa-solid fa-copy"></i>
                 <span x-text="copySuccess ? 'Copiado!' : 'Copiar Texto'">Copiar Texto</span>
             </button>

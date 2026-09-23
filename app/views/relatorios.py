@@ -8,6 +8,7 @@ from app.models.atividade import AtividadePadrao
 from app.services.calculo_bi import CalculoBI
 from app.services.exportacao import ExportacaoService
 from app.services.exportacao_pptx import ExportacaoPPTXService
+from app.services.exportacao_pdf import ExportacaoPDFService
 
 relatorios_bp = Blueprint('relatorios', __name__)
 
@@ -16,10 +17,11 @@ relatorios_bp = Blueprint('relatorios', __name__)
 def index():
     """
     Central de Relatórios de Produção com visualização e download de evidências.
-    Respeita estritamente o isolamento de setores autorizados para coordenadores.
+    Respeita estritamente o isolamento de setores autorizados para Líderes/Coordenadores.
+    Suporta exportação em Excel (.xlsx), PDF (.pdf), PowerPoint (.pptx) e WhatsApp.
     """
     if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
-        flash('Acesso restrito à gestão de relatórios.', 'warning')
+        flash('Acesso restrito à emissão de relatórios consolidados.', 'warning')
         return redirect(url_for('operacao.painel'))
 
     page = request.args.get('page', 1, type=int)
@@ -28,13 +30,13 @@ def index():
     data_inicio_str = request.args.get('data_inicio')
     data_fim_str = request.args.get('data_fim')
     status_prazo = request.args.get('status_prazo')
-    export_action = request.args.get('export')
+    export_action = request.args.get('export') or request.args.get('exportar')
 
-    # Regra de Negócio de Setores para Coordenador
+    # Validação de acesso ao setor para Líderes
     if current_user.is_coordenador and not current_user.is_gestor:
         setores_permitidos_ids = current_user.todos_setores_ids
         if setor_id and setor_id not in setores_permitidos_ids:
-            flash('Acesso negado a este setor nos relatórios.', 'danger')
+            flash('Acesso restrito aos setores sob sua coordenação.', 'danger')
             return redirect(url_for('relatorios.index', setor_id=current_user.setor_id))
 
     query = Lancamento.query.join(Usuario, Lancamento.usuario_id == Usuario.id)
@@ -68,12 +70,37 @@ def index():
 
     query = query.order_by(Lancamento.data_hora_inicio.desc())
 
+    # --- FLUXOS DE EXPORTAÇÃO ---
     if export_action == 'excel':
         return ExportacaoService.gerar_excel(query.all())
+    
+    elif export_action == 'pdf':
+        periodo_str = f"{data_inicio_str or 'Início'} até {data_fim_str or 'Hoje'}"
+        setor_obj = Setor.query.get(setor_id) if setor_id else None
+        setor_nome = setor_obj.nome if setor_obj else "Todos os Setores Autorizados"
+        user_obj = Usuario.query.get(usuario_id) if usuario_id else None
+        usuario_nome = user_obj.nome_completo if user_obj else "Todos os Colaboradores"
+
+        pdf_stream = ExportacaoPDFService.gerar_relatorio_pdf(
+            lancamentos=query.all(),
+            periodo_str=periodo_str,
+            setor_nome=setor_nome,
+            usuario_nome=usuario_nome
+        )
+        filename = f"gerot_relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        return send_file(
+            pdf_stream,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+
     elif export_action == 'whatsapp':
         periodo_str = f"{data_inicio_str or 'Início'} até {data_fim_str or 'Hoje'}"
-        setor_nome = Setor.query.get(setor_id).nome if setor_id else "Todos os Setores Autorizados"
-        usuario_nome = Usuario.query.get(usuario_id).nome_completo if usuario_id else "Todos"
+        setor_obj = Setor.query.get(setor_id) if setor_id else None
+        setor_nome = setor_obj.nome if setor_obj else "Todos os Setores Autorizados"
+        user_obj = Usuario.query.get(usuario_id) if usuario_id else None
+        usuario_nome = user_obj.nome_completo if user_obj else "Todos"
 
         texto_wa = ExportacaoService.gerar_texto_whatsapp(
             query.all(), periodo_str, setor_nome, usuario_nome
@@ -107,11 +134,10 @@ def index():
 @login_required
 def gerar_pptx():
     """
-    Função exclusiva para coordenadores, gestores e administradores gerarem
-    relatórios em PowerPoint (.pptx) vinculados aos filtros aplicados, respeitando setores permitidos.
+    Exportação executiva para slides PowerPoint (.pptx).
     """
     if not (current_user.is_gestor or current_user.is_coordenador or current_user.is_admin):
-        flash('Acesso restrito para geração de relatórios executivos em PowerPoint.', 'danger')
+        flash('Acesso negado para emissão de relatórios PowerPoint.', 'danger')
         return redirect(url_for('operacao.painel'))
 
     setor_id = request.args.get('setor_id', type=int)
@@ -122,7 +148,7 @@ def gerar_pptx():
     if current_user.is_coordenador and not current_user.is_gestor:
         setores_permitidos_ids = current_user.todos_setores_ids
         if setor_id and setor_id not in setores_permitidos_ids:
-            flash('Acesso negado para gerar PowerPoint deste setor.', 'danger')
+            flash('Acesso não autorizado ao setor solicitado.', 'danger')
             return redirect(url_for('relatorios.index'))
 
     query = Lancamento.query.join(Usuario, Lancamento.usuario_id == Usuario.id)
@@ -182,9 +208,10 @@ def gerar_pptx():
 
     atividades_totais = atividades_query.all()
     status_counts = {
-        'Concluído': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Concluído'),
-        'Em Andamento': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Em Andamento'),
-        'Cancelado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Em Andamento') == 'Cancelado')
+        'Não Iniciado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Não Iniciado'),
+        'Em Andamento': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Em Andamento'),
+        'Concluído': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Concluído'),
+        'Cancelado': sum(1 for a in atividades_totais if getattr(a, 'status_sla', 'Não Iniciado') == 'Cancelado')
     }
 
     setor_nome = Setor.query.get(setor_id).nome if setor_id else "Visão Consolidada de Setores Autorizados"

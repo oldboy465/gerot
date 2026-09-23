@@ -6,6 +6,7 @@ class AtividadePadrao(db.Model):
     Atividade Macro (Catálogo de Serviços).
     Representa o "O Que Fazer".
     Ex: "Conciliação Bancária", "Carregamento de Caminhão".
+    Status padronizados: 'Não Iniciado', 'Em Andamento', 'Concluído', 'Cancelado'.
     """
     __tablename__ = 'atividades_padrao'
 
@@ -20,7 +21,8 @@ class AtividadePadrao(db.Model):
     is_rotineira = db.Column(db.Boolean, default=True)
     requer_tarefas = db.Column(db.Boolean, default=False)
 
-    status_sla = db.Column(db.String(30), default='Em Andamento', nullable=False)
+    # Status padrão do ciclo de vida da rotina
+    status_sla = db.Column(db.String(30), default='Não Iniciado', nullable=False)
 
     tempo_estimado_valor = db.Column(db.Integer, nullable=False, default=0)
     tempo_estimado_unidade = db.Column(db.String(20), default='minutos', nullable=False)
@@ -34,8 +36,10 @@ class AtividadePadrao(db.Model):
 
     def calcular_minutos_normalizados(self):
         """
-        Converte a unidade flexível para minutos padrão GEROT.
-        Base: Jornada de 8h úteis (480 min).
+        Converte a unidade flexível para minutos úteis padrão GEROT.
+        Base de cálculo: Jornada diária útil de 8 horas (480 minutos).
+        Semana útil: 5 dias úteis (40 horas = 2.400 minutos).
+        Mês útil: 20 dias úteis (160 horas = 9.600 minutos).
         """
         fator = {
             'minutos': 1,
@@ -44,26 +48,38 @@ class AtividadePadrao(db.Model):
             'semanas': 2400,
             'meses': 9600
         }
-        multiplicador = fator.get(self.tempo_estimado_unidade, 1)
-        return self.tempo_estimado_valor * multiplicador
+        unidade = (self.tempo_estimado_unidade or 'minutos').lower()
+        multiplicador = fator.get(unidade, 1)
+        valor = self.tempo_estimado_valor or 0
+        return valor * multiplicador
 
     def __init__(self, **kwargs):
         super(AtividadePadrao, self).__init__(**kwargs)
         if self.tempo_estimado_valor and self.tempo_estimado_unidade:
             self.tempo_convertido_minutos = self.calcular_minutos_normalizados()
+        if not self.status_sla:
+            self.status_sla = 'Não Iniciado'
 
     def atualizar_tempo(self):
         """Chamar este método sempre que editar o tempo estimado"""
         self.tempo_convertido_minutos = self.calcular_minutos_normalizados()
 
+    def definir_status(self, novo_status):
+        """Garante a atribuição dentro dos estados homologados"""
+        status_validos = {'Não Iniciado', 'Em Andamento', 'Concluído', 'Cancelado'}
+        if novo_status in status_validos:
+            self.status_sla = novo_status
+        else:
+            self.status_sla = 'Em Andamento'
+
     def __repr__(self):
-        return f'<Atividade {self.titulo} ({self.tempo_convertido_minutos} min) - SLA: {self.status_sla}>'
+        return f'<Atividade {self.titulo} ({self.tempo_convertido_minutos} min úteis) - Status: {self.status_sla}>'
 
 class TarefaPadrao(db.Model):
     """
     Sub-atividade / Tarefa (Micro).
     Obrigatória vinculação a uma Atividade Macro.
-    Pode ser cadastrada por Gestores ou Operadores.
+    Pode ser cadastrada por Diretores, Líderes ou Colaboradores.
     """
     __tablename__ = 'tarefas_padrao'
 
